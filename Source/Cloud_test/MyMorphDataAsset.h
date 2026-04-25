@@ -20,10 +20,10 @@ class CLOUD_TEST_API UMyMorphDataAsset : public UPrimaryDataAsset
 public:
     // --- 基础移动属性 ---
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement")
-    float MaxWalkSpeed = 450.0f;
+    float MaxWalkSpeed = 450.0f; // 最大行走速度
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement")
-    float AirControl = 0.6f;
+    float AirControl = 0.6f; // 空中可控程度
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement")
     float GravityScale = 0.35f;

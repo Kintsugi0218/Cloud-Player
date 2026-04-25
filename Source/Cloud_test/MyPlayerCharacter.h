@@ -32,23 +32,23 @@ public:
 
     // --- 新增的变身相关接口 ---
     UFUNCTION(BlueprintCallable, Category = "Morphing")
-    bool SwitchMorph(UMyMorphDataAsset* NewMorphData);
+    bool SwitchMorph(UMyMorphDataAsset* NewMorphData); // 切换至指定形态
 
     UFUNCTION(BlueprintCallable, Category = "Morphing")
-    void UnlockMorphByTag(FName Tag);
+    void UnlockMorphByTag(FName Tag); // 解锁形态
 
     // ===== 变身系统核心变量 =====
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Morphing")
-    TArray<TObjectPtr<UMyMorphDataAsset>> AllMorphDataList; // 轮换顺序来源
+    TArray<TObjectPtr<UMyMorphDataAsset>> AllMorphDataList; // 轮换顺序来源,所有可用形态
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Morphing", meta = (AllowPrivateAccess = "true"))
-    TObjectPtr<UMyMorphDataAsset> DefaultMorphData;
+    TObjectPtr<UMyMorphDataAsset> DefaultMorphData; // 默认形态
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Morphing")
     UMyMorphDataAsset* CurrentMorphData; // 当前形态数据
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Morphing")
-    TArray<FName> UnlockedMorphTags;
+    TArray<FName> UnlockedMorphTags; // 解锁的形态
 
 private:
     // ===== Enhanced Input callbacks =====
@@ -60,7 +60,7 @@ private:
     void OnNextMorphPressed();
 
     bool CycleMorph(int32 Direction); // -1:上一个, +1:下一个
-    void BuildUnlockedMorphList(TArray<UMyMorphDataAsset*>& OutList) const;
+    void BuildUnlockedMorphList(TArray<UMyMorphDataAsset*>& OutList) const; // 用已解锁的形态填充OutList
 
     // ===== 通用技能槽 callbacks =====
     void OnAbilitySlotPressed();
@@ -110,6 +110,9 @@ private:
     bool bJumpHeld = false;
     bool bIsJumping = false;
     float JumpStartZ = 0.f;
+
+    float TargetScale = 1.f;
+    float ScaleInterpSpeed = 5.f;
 
     // ===== 变身系统辅助函数 =====
     void ApplyMorphSettings(UMyMorphDataAsset* Data);

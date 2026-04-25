@@ -69,7 +69,7 @@ void AMyPlayerCharacter::BeginPlay()
 
     if (DefaultMorphData)
     {
-        UnlockMorphByTag(DefaultMorphData->UnlockTag);
+        UnlockMorphByTag(DefaultMorphData->UnlockTag); // 将默认形态解锁
         SwitchMorph(DefaultMorphData); // 内部会应用参数+能力+形态输入
     }
     else
@@ -99,6 +99,8 @@ void AMyPlayerCharacter::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
 
+    UE_LOG(LogTemp,Warning,TEXT("Scale: %s"),*GetActorScale3D().ToString())
+
     if (bJumpHeld)
     {
         if (!bIsJumping && GetCharacterMovement()->IsMovingOnGround())
@@ -118,6 +120,9 @@ void AMyPlayerCharacter::Tick(float DeltaTime)
                 FVector Vel = GetCharacterMovement()->Velocity;
                 Vel.Z = CurrentJumpSpeed; // 使用临时变量
                 GetCharacterMovement()->Velocity = Vel;
+                float Alpha = FMath::Clamp(JumpedHeight / CurrentMaxJumpHeight, 0.f, 1.f);
+
+                TargetScale = FMath::Lerp(1.f, 0.5f, Alpha);
             }
             else
             {
@@ -126,10 +131,16 @@ void AMyPlayerCharacter::Tick(float DeltaTime)
         }
     }
 
+
     if (GetCharacterMovement()->IsMovingOnGround())
     {
         bIsJumping = false;
+        TargetScale = 1.f;
     }
+
+    FVector CurrentScale = GetActorScale3D();
+    float NewScale = FMath::FInterpTo(CurrentScale.X, TargetScale, DeltaTime, ScaleInterpSpeed);
+    SetActorScale3D(FVector(NewScale));
 }
 
 void AMyPlayerCharacter::Move(const FInputActionValue& Value)
@@ -297,7 +308,7 @@ void AMyPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 
 // --- 新增函数实现 ---
 
-bool AMyPlayerCharacter::SwitchMorph(UMyMorphDataAsset* NewMorphData)
+bool AMyPlayerCharacter::SwitchMorph(UMyMorphDataAsset* NewMorphData) // 如果形态已解锁则切换网格、能力、键位
 {
     if (!NewMorphData) return false;
 
@@ -371,7 +382,7 @@ void AMyPlayerCharacter::ApplyMorphSettings(UMyMorphDataAsset* Data)
     }
 }
 
-void AMyPlayerCharacter::RefreshMorphInputContext(UMyMorphDataAsset* Data)
+void AMyPlayerCharacter::RefreshMorphInputContext(UMyMorphDataAsset* Data) // 刷新形态输入
 {
     APlayerController* PC = Cast<APlayerController>(GetController());
     if (!PC) return;

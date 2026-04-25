@@ -57,7 +57,7 @@ void AMyCameraRigActor::BeginPlay()
 	{
 		if (APawn* Pawn = UGameplayStatics::GetPlayerPawn(this, 0))
 		{
-			SetFollowTarget(Pawn);
+			SetFollowTarget(Pawn); 
 		}
 	}
 
@@ -65,7 +65,7 @@ void AMyCameraRigActor::BeginPlay()
 	{
 		if (APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0))
 		{
-			PC->SetViewTarget(this);
+			PC->SetViewTarget(this); // 设定让 PlayerController 的 CameraManager 视角为CameraRig而非Controller
 		}
 	}
 }
@@ -107,7 +107,7 @@ void AMyCameraRigActor::ResetToDefaultProfile(float BlendTime)
 	ApplyProfile(DefaultProfile, BlendTime);
 }
 
-void AMyCameraRigActor::UpdateProfileBlend(float DeltaTime)
+void AMyCameraRigActor::UpdateProfileBlend(float DeltaTime) // 更新Profile的各项变量，使其从当前Profile过渡到目标Profile
 {
 	if (!bProfileTargetInited) return;
 
@@ -136,17 +136,19 @@ void AMyCameraRigActor::UpdateFollow(float DeltaTime)
 
 	int32 ViewW = 0;
 	int32 ViewH = 0;
-	PC->GetViewportSize(ViewW, ViewH);
+	PC->GetViewportSize(ViewW, ViewH); // 获取当前视口分辨率
 	if (ViewW <= 0 || ViewH <= 0) return;
 
+	// 设定跟随点为偏移后的目标点
 	const FVector TargetPoint = TargetPawn->GetActorLocation() + CurrentProfile.TargetOffset;
 	const FVector CamLoc = GetActorLocation();
 
+	// 单独控制Z坐标
 	const float DesiredZ = TargetPoint.Z + CurrentProfile.HeightOffset;
 
 	if (!bXYTrackPlaneInited)
 	{
-		XYTrackPlaneZ = TargetPoint.Z;
+		XYTrackPlaneZ = TargetPoint.Z; // 第一次时直接对齐目标高度，之后差值至目标的Z保证跟随
 		bXYTrackPlaneInited = true;
 	}
 	else
@@ -191,7 +193,7 @@ void AMyCameraRigActor::UpdateFollow(float DeltaTime)
 			ClampedNorm.X * static_cast<float>(ViewW),
 			ClampedNorm.Y * static_cast<float>(ViewH));
 
-		FVector RayO1, RayD1, RayO2, RayD2;
+		FVector RayO1, RayD1, RayO2, RayD2; // 两条射线，分别是原始点和Clamp之后的
 		const bool bOK1 = PC->DeprojectScreenPositionToWorld(TargetScreenPx.X, TargetScreenPx.Y, RayO1, RayD1);
 		const bool bOK2 = PC->DeprojectScreenPositionToWorld(ClampedScreenPx.X, ClampedScreenPx.Y, RayO2, RayD2);
 
@@ -203,27 +205,27 @@ void AMyCameraRigActor::UpdateFollow(float DeltaTime)
 
 			auto IntersectAtZ = [&](const FVector& O, const FVector& D, FVector& OutHit) -> bool
 				{
-					if (FMath::Abs(D.Z) < MinAbsRayZ) return false;
+					if (FMath::Abs(D.Z) < MinAbsRayZ) return false; // 防止平行
 
-					const float T = (PlaneZ - O.Z) / D.Z;
-					if (T < 0.f || T > MaxRayT) return false;
+					const float T = (PlaneZ - O.Z) / D.Z; // 求交点
+					if (T < 0.f || T > MaxRayT) return false; // 限制范围
 
-					OutHit = O + D * T;
+					OutHit = O + D * T; // 交点
 					return FMath::IsFinite(OutHit.X) && FMath::IsFinite(OutHit.Y) && FMath::IsFinite(OutHit.Z);
 				};
 
 			FVector HitTarget, HitClamp;
 			if (IntersectAtZ(RayO1, RayD1, HitTarget) && IntersectAtZ(RayO2, RayD2, HitClamp))
 			{
-				FVector DeltaWorld = HitTarget - HitClamp;
-				DeltaWorld.Z = 0.f;
+				FVector DeltaWorld = HitTarget - HitClamp; // 差值
+				DeltaWorld.Z = 0.f; 
 
 				if (FMath::IsFinite(DeltaWorld.X) && FMath::IsFinite(DeltaWorld.Y) && FMath::IsFinite(DeltaWorld.Z))
 				{
 					const float MaxPushPerFrame = 80.f;
-					DeltaWorld = DeltaWorld.GetClampedToMaxSize2D(MaxPushPerFrame);
+					DeltaWorld = DeltaWorld.GetClampedToMaxSize2D(MaxPushPerFrame); //防止跳跃
 
-					DesiredX = CamLoc.X + DeltaWorld.X;
+					DesiredX = CamLoc.X + DeltaWorld.X; // 更新目标位置
 					DesiredY = CamLoc.Y + DeltaWorld.Y;
 				}
 			}
