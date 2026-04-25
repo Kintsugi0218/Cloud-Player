@@ -1,0 +1,40 @@
+{
+	"FileVersion": 3,
+	"EngineAssociation": "5.6",
+	"Category": "",
+	"Description": "",
+	"Modules": [
+		{
+			"Name": "Cloud_test",
+			"Type": "Runtime",
+<<<<<<< HEAD
+			"LoadingPhase": "Default"
+=======
+			"LoadingPhase": "Default",
+			"AdditionalDependencies": [
+				"Engine"
+			]
+>>>>>>> 653abae23dab31c7ec801ba4f10a973624245a3c
+		}
+	],
+	"Plugins": [
+		{
+			"Name": "ModelingToolsEditorMode",
+			"Enabled": true,
+			"TargetAllowList": [
+				"Editor"
+			]
+<<<<<<< HEAD
+		},
+		{
+			"Name": "Volumetrics",
+			"Enabled": true
+		},
+		{
+			"Name": "MovieRenderPipeline",
+			"Enabled": true
+=======
+>>>>>>> 653abae23dab31c7ec801ba4f10a973624245a3c
+		}
+	]
+}
