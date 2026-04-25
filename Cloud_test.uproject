@@ -7,20 +7,10 @@
 		{
 			"Name": "Cloud_test",
 			"Type": "Runtime",
-<<<<<<< HEAD
-<<<<<<< HEAD
-			"LoadingPhase": "Default"
-=======
-=======
->>>>>>> 653abae23dab31c7ec801ba4f10a973624245a3c
 			"LoadingPhase": "Default",
 			"AdditionalDependencies": [
 				"Engine"
 			]
-<<<<<<< HEAD
->>>>>>> 653abae23dab31c7ec801ba4f10a973624245a3c
-=======
->>>>>>> 653abae23dab31c7ec801ba4f10a973624245a3c
 		}
 	],
 	"Plugins": [
@@ -30,8 +20,6 @@
 			"TargetAllowList": [
 				"Editor"
 			]
-<<<<<<< HEAD
-<<<<<<< HEAD
 		},
 		{
 			"Name": "Volumetrics",
@@ -40,10 +28,6 @@
 		{
 			"Name": "MovieRenderPipeline",
 			"Enabled": true
-=======
->>>>>>> 653abae23dab31c7ec801ba4f10a973624245a3c
-=======
->>>>>>> 653abae23dab31c7ec801ba4f10a973624245a3c
 		}
 	]
 }
