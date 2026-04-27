@@ -8,6 +8,11 @@
 #include "Engine/StreamableManager.h" // 用于异步加载
 #include "Engine/LocalPlayer.h"
 
+
+#include "InteractInterface.h"
+#include "Blueprint/UserWidget.h"
+#include "DialogueWidget.h"
+
 // Enhanced Input
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
@@ -98,8 +103,6 @@ void AMyPlayerCharacter::BeginPlay()
 void AMyPlayerCharacter::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
-
-    UE_LOG(LogTemp,Warning,TEXT("Scale: %s"),*GetActorScale3D().ToString())
 
     if (bJumpHeld)
     {
@@ -288,6 +291,10 @@ void AMyPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
         EIC->BindAction(JumpAction, ETriggerEvent::Canceled, this, &AMyPlayerCharacter::JumpCompleted);
     }
 
+    if (InteractAction) {
+        EIC->BindAction(InteractAction, ETriggerEvent::Started, this, &AMyPlayerCharacter::Interact);
+    }
+
     if (PrevMorphAction)
     {
         EIC->BindAction(PrevMorphAction, ETriggerEvent::Started, this, &AMyPlayerCharacter::OnPrevMorphPressed);
@@ -305,6 +312,104 @@ void AMyPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
         EIC->BindAction(AbilitySlotAction, ETriggerEvent::Canceled, this, &AMyPlayerCharacter::OnAbilitySlotReleased);
     }
 }
+
+
+void AMyPlayerCharacter::Interact() 
+{
+    if (CurrentInteractable && CurrentInteractable->GetClass()->ImplementsInterface(UInteractInterface::StaticClass()))  
+    {
+        HideInteractPrompt();
+        IInteractInterface::Execute_Interact(CurrentInteractable, this);
+    }
+    
+
+}
+
+
+void AMyPlayerCharacter::ShowInteractPrompt()
+{
+    if (!InteractPromptWidget && InteractPromptClass)
+    {
+        InteractPromptWidget = CreateWidget<UUserWidget>(GetWorld(), InteractPromptClass);
+        InteractPromptWidget->AddToViewport();
+
+        UE_LOG(LogTemp, Warning, TEXT("Create F"));
+    }
+}
+
+void AMyPlayerCharacter::HideInteractPrompt()
+{
+    if (InteractPromptWidget)
+    {
+        InteractPromptWidget->RemoveFromParent();
+        UE_LOG(LogTemp, Warning, TEXT("Remove F"));
+        InteractPromptWidget = nullptr;
+    }
+}
+
+void AMyPlayerCharacter::SetCurrentInteractable(AActor* NewInteractable)
+{
+    if (NewInteractable)
+    {
+        CurrentInteractable = NewInteractable;
+        ShowInteractPrompt();
+    }
+    else if (CurrentInteractable)
+    {
+        CurrentInteractable = nullptr;
+        HideInteractPrompt();
+    }
+}
+
+void AMyPlayerCharacter::StartDialogue(const TArray<FString>& Lines) 
+{
+
+    if (!DialogueWidget && DialogueWidgetClass)
+    {
+        DialogueWidget = CreateWidget<UDialogueWidget>(GetWorld(), DialogueWidgetClass);
+        DialogueWidget->AddToViewport();
+
+        DialogueWidget->InitDialogue(Lines);
+        DialogueWidget->SetPlayerRef(this);
+    }
+
+    APlayerController* PC = Cast<APlayerController>(GetController());
+
+    if (PC)
+    {
+        FInputModeGameAndUI Mode;
+
+        Mode.SetWidgetToFocus(DialogueWidget->TakeWidget());
+        Mode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+
+        PC->SetInputMode(Mode);
+        PC->bShowMouseCursor = true;
+    }
+}
+
+void AMyPlayerCharacter::EndDialogue()
+{
+    if (DialogueWidget)
+    {
+        DialogueWidget->RemoveFromParent();
+        DialogueWidget = nullptr;
+    }
+
+    // 恢复提示UI（如果还在范围内）
+    if (CurrentInteractable)
+    {
+        ShowInteractPrompt();
+    }
+
+    if (APlayerController* PC = Cast<APlayerController>(GetController()))
+    {
+        PC->SetInputMode(FInputModeGameOnly());
+        PC->bShowMouseCursor = false;
+    }
+}
+
+
+
 
 // --- 新增函数实现 ---
 

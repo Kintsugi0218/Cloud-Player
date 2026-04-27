@@ -14,6 +14,7 @@ class UInputAction;
 
 // Camera Rig
 class AMyCameraRigActor;
+class UDialogueWidget;
 
 UCLASS()
 class CLOUD_TEST_API AMyPlayerCharacter : public ACharacter
@@ -50,6 +51,32 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Morphing")
     TArray<FName> UnlockedMorphTags; // 解锁的形态
 
+
+    // ===== 交互相关 =====
+    void Interact();
+
+    UPROPERTY(EditAnywhere, Category = "UI")
+    TSubclassOf<UUserWidget> InteractPromptClass;
+
+    UPROPERTY()
+    UUserWidget* InteractPromptWidget;
+
+    UPROPERTY()
+    AActor* CurrentInteractable = nullptr;
+
+    void SetCurrentInteractable(AActor* NewInteractable);
+    void ShowInteractPrompt();
+    void HideInteractPrompt();
+
+    UPROPERTY(EditAnywhere, Category = "UI")
+    TSubclassOf<UUserWidget> DialogueWidgetClass;
+
+    UPROPERTY()
+    UDialogueWidget* DialogueWidget;
+    void StartDialogue(const TArray<FString>& Lines);
+    UFUNCTION(BlueprintCallable)
+    void EndDialogue();
+
 private:
     // ===== Enhanced Input callbacks =====
     void Move(const FInputActionValue& Value);
@@ -79,6 +106,9 @@ private:
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input", meta = (AllowPrivateAccess = "true"))
     UInputAction* JumpAction;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input", meta = (AllowPrivateAccess = "true"))
+    UInputAction* InteractAction;
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input", meta = (AllowPrivateAccess = "true"))
     UInputAction* PrevMorphAction; // Q
@@ -111,6 +141,7 @@ private:
     bool bIsJumping = false;
     float JumpStartZ = 0.f;
 
+    // ===== 升空体积缩小相关 =====
     float TargetScale = 1.f;
     float ScaleInterpSpeed = 5.f;
 
