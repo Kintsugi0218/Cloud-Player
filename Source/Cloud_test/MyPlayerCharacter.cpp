@@ -9,6 +9,9 @@
 #include "Engine/LocalPlayer.h"
 
 
+#include "MySaveGame.h"
+#include "MyGameInstance.h"
+
 #include "InteractInterface.h"
 #include "Blueprint/UserWidget.h"
 #include "DialogueWidget.h"
@@ -98,6 +101,12 @@ void AMyPlayerCharacter::BeginPlay()
             CameraRigRef->SetFollowTarget(this);
         }
     }
+
+    // ¼ÓÔØ´æµµ
+    if (UMyGameInstance* GI = GetGameInstance<UMyGameInstance>())
+    {
+        GI->LoadGame();
+    }
 }
 
 void AMyPlayerCharacter::Tick(float DeltaTime)
@@ -144,10 +153,24 @@ void AMyPlayerCharacter::Tick(float DeltaTime)
     FVector CurrentScale = GetActorScale3D();
     float NewScale = FMath::FInterpTo(CurrentScale.X, TargetScale, DeltaTime, ScaleInterpSpeed);
     SetActorScale3D(FVector(NewScale));
+
+    if (CurrentInteractable && CurrentInteractableRotation != FRotator::ZeroRotator) 
+    {
+        FRotator NewRot = FMath::RInterpTo(
+            GetActorRotation(),
+            CurrentInteractableRotation,
+            DeltaTime,
+            5.f
+        );
+
+        SetActorRotation(NewRot);
+    }
 }
 
 void AMyPlayerCharacter::Move(const FInputActionValue& Value)
 {
+    if (bIsInteracting) return;
+
     const FVector2D MoveValue = Value.Get<FVector2D>();
     if (!Controller) return;
 
@@ -196,6 +219,7 @@ void AMyPlayerCharacter::BuildUnlockedMorphList(TArray<UMyMorphDataAsset*>& OutL
 
         if (UnlockedMorphTags.Contains(Morph->UnlockTag))
         {
+            UE_LOG(LogTemp, Warning, TEXT("Morph: %s"), *Morph->UnlockTag.ToString());
             OutList.Add(Morph);
         }
     }
@@ -230,6 +254,7 @@ bool AMyPlayerCharacter::CycleMorph(int32 Direction)
     }
 
     const int32 Count = UnlockedMorphs.Num();
+    UE_LOG(LogTemp, Warning, TEXT("Morphs Num :%d"), Count);
     const int32 NextIndex = (CurrentIndex + Direction + Count) % Count;
 
     return SwitchMorph(UnlockedMorphs[NextIndex]);
@@ -319,12 +344,9 @@ void AMyPlayerCharacter::Interact()
     if (CurrentInteractable && CurrentInteractable->GetClass()->ImplementsInterface(UInteractInterface::StaticClass()))  
     {
         HideInteractPrompt();
-        IInteractInterface::Execute_Interact(CurrentInteractable, this);
+        IInteractInterface::Execute_Interact(CurrentInteractable, this); // Ç°ÕßÖ´ÐÐº¯Êý£¬°ÑºóÕß´«¹ýÈ¥
     }
-    
-
 }
-
 
 void AMyPlayerCharacter::ShowInteractPrompt()
 {
@@ -377,7 +399,7 @@ void AMyPlayerCharacter::StartDialogue(const TArray<FString>& Lines)
 
     if (PC)
     {
-        FInputModeGameAndUI Mode;
+        FInputModeUIOnly Mode;
 
         Mode.SetWidgetToFocus(DialogueWidget->TakeWidget());
         Mode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
@@ -385,6 +407,16 @@ void AMyPlayerCharacter::StartDialogue(const TArray<FString>& Lines)
         PC->SetInputMode(Mode);
         PC->bShowMouseCursor = true;
     }
+
+    bIsInteracting = true;
+
+    FVector Direction = CurrentInteractable->GetActorLocation() - GetActorLocation();
+    FRotator LookAtRotation = Direction.Rotation();
+    LookAtRotation.Pitch = 0.f;
+    LookAtRotation.Roll = 0.f;
+
+    CurrentInteractableRotation = LookAtRotation;
+
 }
 
 void AMyPlayerCharacter::EndDialogue()
@@ -406,6 +438,10 @@ void AMyPlayerCharacter::EndDialogue()
         PC->SetInputMode(FInputModeGameOnly());
         PC->bShowMouseCursor = false;
     }
+
+    bIsInteracting = false;
+
+    CurrentInteractableRotation = FRotator::ZeroRotator;
 }
 
 
@@ -444,11 +480,13 @@ bool AMyPlayerCharacter::SwitchMorph(UMyMorphDataAsset* NewMorphData) // Èç¹ûÐÎÌ
 
 void AMyPlayerCharacter::UnlockMorphByTag(FName Tag)
 {
+    UE_LOG(LogTemp, Warning, TEXT("enter Unlock"));
     if (Tag.IsNone()) return; // ·ÀÖ¹¿Õ±êÇ©½øÈë½âËøÁÐ±í
 
     if (!UnlockedMorphTags.Contains(Tag))
     {
         UnlockedMorphTags.Add(Tag);
+        UE_LOG(LogTemp, Warning, TEXT("Player learned %s"), *Tag.ToString());
     }
 }
 
@@ -540,4 +578,30 @@ void AMyPlayerCharacter::RefreshMorphAbilities(UMyMorphDataAsset* Data)
             }
         }
     }
+}
+
+void AMyPlayerCharacter::SaveData_Implementation(UMySaveGame* GameData)
+{
+    GameData->PlayerLocation = GetActorLocation();
+
+    // ±£´æÒÑ½âËøÐÎÌ¬ºÍ×î½üÊ¹ÓÃµÄÐÎÌ¬
+    GameData->UnlockedMorphs.Empty();
+    BuildUnlockedMorphList(GameData->UnlockedMorphs);
+    GameData->LastMorph = CurrentMorphData;
+}
+
+void AMyPlayerCharacter::LoadData_Implementation(UMySaveGame* GameData)
+{
+    SetActorLocation(GameData->PlayerLocation);
+
+    // ¼ÓÔØÒÑ½âËøÐÎÌ¬ºÍ×î½üÊ¹ÓÃµÄÐÎÌ¬
+    for (UMyMorphDataAsset* Morph : GameData->UnlockedMorphs)
+    {
+        if (!Morph) continue;
+        if (Morph->UnlockTag.IsNone()) continue;
+
+        UnlockMorphByTag(Morph->UnlockTag);
+    }
+
+    SwitchMorph(GameData->LastMorph);
 }

@@ -4,6 +4,7 @@
 #include "GameFramework/Character.h"
 #include "InputActionValue.h"
 #include "MyMorphDataAsset.h" // 引入新类
+#include "ISaveManager.h"
 #include "MyPlayerCharacter.generated.h"
 
 class USkeletalMeshComponent; // 新增，用于动态形态
@@ -14,10 +15,12 @@ class UInputAction;
 
 // Camera Rig
 class AMyCameraRigActor;
+
+
 class UDialogueWidget;
 
 UCLASS()
-class CLOUD_TEST_API AMyPlayerCharacter : public ACharacter
+class CLOUD_TEST_API AMyPlayerCharacter : public ACharacter ,public IISaveManager
 {
     GENERATED_BODY()
 
@@ -55,6 +58,8 @@ public:
     // ===== 交互相关 =====
     void Interact();
 
+    bool bIsInteracting;
+
     UPROPERTY(EditAnywhere, Category = "UI")
     TSubclassOf<UUserWidget> InteractPromptClass;
 
@@ -63,6 +68,8 @@ public:
 
     UPROPERTY()
     AActor* CurrentInteractable = nullptr;
+
+    FRotator CurrentInteractableRotation;
 
     void SetCurrentInteractable(AActor* NewInteractable);
     void ShowInteractPrompt();
@@ -149,4 +156,7 @@ private:
     void ApplyMorphSettings(UMyMorphDataAsset* Data);
     void RefreshMorphAbilities(UMyMorphDataAsset* Data);
     void RefreshMorphInputContext(UMyMorphDataAsset* Data);
+
+    virtual void SaveData_Implementation(UMySaveGame* GameData) override;
+    virtual void LoadData_Implementation(UMySaveGame* GameData) override;
 };

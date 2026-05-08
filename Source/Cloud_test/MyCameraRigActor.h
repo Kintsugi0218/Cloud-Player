@@ -2,12 +2,14 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "ISaveManager.h"
 #include "MyCameraRigActor.generated.h"
 
 class USceneComponent;
 class USpringArmComponent;
 class UCameraComponent;
 class APawn;
+
 
 USTRUCT(BlueprintType)
 struct FMyCameraProfile
@@ -51,7 +53,7 @@ struct FMyCameraProfile
 };
 
 UCLASS()
-class CLOUD_TEST_API AMyCameraRigActor : public AActor
+class CLOUD_TEST_API AMyCameraRigActor : public AActor,public IISaveManager
 {
 	GENERATED_BODY()
 
@@ -79,6 +81,9 @@ public:
 	UFUNCTION(BlueprintPure, Category = "CameraRig")
 	const FMyCameraProfile& GetCurrentProfile() const { return CurrentProfile; }
 
+	virtual void SaveData_Implementation(UMySaveGame* GameData) override;
+	virtual void LoadData_Implementation(UMySaveGame* GameData) override;
+
 private:
 	void UpdateProfileBlend(float DeltaTime); // 保留函数名，内部改为 toward-target
 	void UpdateFollow(float DeltaTime);
@@ -101,6 +106,8 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "CameraRig")
 	FMyCameraProfile DefaultProfile;
+
+	bool bLoadProfile;
 
 	UPROPERTY(Transient)
 	TWeakObjectPtr<APawn> FollowTarget;

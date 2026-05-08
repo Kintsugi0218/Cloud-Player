@@ -6,6 +6,8 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Kismet/GameplayStatics.h"
 
+#include "MySaveGame.h"
+
 namespace
 {
 	static FVector2D InterpVector2D(const FVector2D& Current, const FVector2D& Target, float DeltaTime, float Speed)
@@ -46,8 +48,12 @@ void AMyCameraRigActor::BeginPlay()
 {
 	Super::BeginPlay();
 
-	CurrentProfile = DefaultProfile;
-	TargetProfile = DefaultProfile;
+	if (!bLoadProfile)
+	{
+		CurrentProfile = DefaultProfile;
+		TargetProfile = DefaultProfile;
+	}
+	
 	bProfileTargetInited = true;
 
 	CameraBoom->TargetArmLength = CurrentProfile.ArmLength;
@@ -79,6 +85,7 @@ void AMyCameraRigActor::Tick(float DeltaTime)
 
 	CameraBoom->TargetArmLength = CurrentProfile.ArmLength;
 	CameraBoom->SetRelativeRotation(FRotator(CurrentProfile.Pitch, CurrentProfile.Yaw, 0.f));
+
 }
 
 void AMyCameraRigActor::SetFollowTarget(APawn* NewTarget)
@@ -106,6 +113,7 @@ void AMyCameraRigActor::ResetToDefaultProfile(float BlendTime)
 {
 	ApplyProfile(DefaultProfile, BlendTime);
 }
+
 
 void AMyCameraRigActor::UpdateProfileBlend(float DeltaTime) // 更新Profile的各项变量，使其从当前Profile过渡到目标Profile
 {
@@ -254,4 +262,32 @@ void AMyCameraRigActor::UpdateFollow(float DeltaTime)
 	NewLoc.Z = FMath::FInterpTo(CamLoc.Z, DesiredZ, DeltaTime, DynamicSpeedZ);
 
 	SetActorLocation(NewLoc);
+}
+
+void AMyCameraRigActor::SaveData_Implementation(UMySaveGame* GameData)
+{
+	UE_LOG(LogTemp, Warning, TEXT("enter save rig position and profile"));
+	if (!GameData) return;
+
+	GameData->CameraRigPosition = GetActorLocation();
+	GameData->VolumeProfile = CurrentProfile;
+
+	UE_LOG(LogTemp, Warning, TEXT("save rig position and profile"));
+	UE_LOG(LogTemp, Warning, TEXT("SAVE ArmLength: %f"), CurrentProfile.ArmLength);
+}
+
+void AMyCameraRigActor::LoadData_Implementation(UMySaveGame* GameData)
+{
+	UE_LOG(LogTemp, Warning, TEXT("enter load rig position and protifle"));
+	if (!GameData) return;
+
+	SetActorLocation(GameData->CameraRigPosition);
+
+	CurrentProfile = GameData->VolumeProfile; 
+	bLoadProfile = true;
+	TargetProfile = GameData->VolumeProfile;  
+
+	ApplyProfile(CurrentProfile);
+	UE_LOG(LogTemp, Warning, TEXT("load rig position and protifle"));
+	UE_LOG(LogTemp, Warning, TEXT("LOAD ArmLength: %f"), GameData->VolumeProfile.ArmLength);
 }

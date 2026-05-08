@@ -4,6 +4,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/SphereComponent.h"
 #include "MyPlayerCharacter.h"
+#include "MySaveGame.h"
 
 AMyNPC::AMyNPC()
 {
@@ -81,6 +82,7 @@ void AMyNPC::OnOverlapEnd(UPrimitiveComponent* OverlappedComponent,
     }
 }
 
+
 void AMyNPC::Interact_Implementation(AActor* Interactor)
 {
     AMyPlayerCharacter* Player = Cast<AMyPlayerCharacter>(Interactor);
@@ -92,7 +94,37 @@ void AMyNPC::Interact_Implementation(AActor* Interactor)
     LookAtRotation.Roll = 0.f;
 
     TargetRotation = LookAtRotation;
+    
+    if (!bHasLearnedAbility) {
+        Player->StartDialogue(DialogueLines);
+        bHasLearnedAbility = true;
+        Player->UnlockMorphByTag(MorphTags);
+    }
+    else 
+    {
+        Player->StartDialogue(LearnedDialogueLines);
+    }
+   
 
-    Player->StartDialogue(DialogueLines);
+   
+}
+
+void AMyNPC::SaveData_Implementation(UMySaveGame* GameData)
+{
+    GameData->NPCPositions.Add(NPCID, GetActorLocation());
+    GameData->NPCAbility.Add(NPCID, bHasLearnedAbility);
+} 
+
+void AMyNPC::LoadData_Implementation(UMySaveGame* GameData)
+{
+    if (FVector* Location = GameData->NPCPositions.Find(NPCID))
+    {
+        SetActorLocation(*Location);
+    }
+
+    if (bool* learnedAbility = GameData->NPCAbility.Find(NPCID)) 
+    {
+        bHasLearnedAbility = *learnedAbility;
+    }
 }
 
