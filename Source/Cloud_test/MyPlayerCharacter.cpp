@@ -23,6 +23,9 @@
 #include "InputMappingContext.h"
 #include "MyMorphAbilityInputReceiver.h"
 
+
+#include "MorphAbilityComponent.h"
+
 // Camera Rig
 #include "MyCameraRigActor.h"
 
@@ -189,6 +192,9 @@ void AMyPlayerCharacter::Move(const FInputActionValue& Value)
 
 void AMyPlayerCharacter::JumpStarted(const FInputActionValue& Value)
 {
+    if (!CurrentMorphData->bCanJump) {
+        return;
+    }
     bJumpHeld = true;
 }
 
@@ -265,9 +271,11 @@ void AMyPlayerCharacter::OnAbilitySlotReleased() { DispatchAbilityInputReleased(
 
 void AMyPlayerCharacter::DispatchAbilityInputPressed(int32 SlotIndex)
 {
-    for (UActorComponent* Comp : ActiveMorphAbilities)
+    for (UMorphAbilityComponent* Comp : ActiveMorphAbilities)
     {
         if (!IsValid(Comp)) continue;
+
+        if (!Comp->IsAbilityEnabled()) continue;
 
         if (Comp->GetClass()->ImplementsInterface(UMyMorphAbilityInputReceiver::StaticClass()))
         {
@@ -282,9 +290,11 @@ void AMyPlayerCharacter::DispatchAbilityInputPressed(int32 SlotIndex)
 
 void AMyPlayerCharacter::DispatchAbilityInputReleased(int32 SlotIndex)
 {
-    for (UActorComponent* Comp : ActiveMorphAbilities)
+    for (UMorphAbilityComponent* Comp : ActiveMorphAbilities)
     {
         if (!IsValid(Comp)) continue;
+
+        if (!Comp->IsAbilityEnabled()) continue;
 
         if (Comp->GetClass()->ImplementsInterface(UMyMorphAbilityInputReceiver::StaticClass()))
         {
@@ -536,6 +546,7 @@ void AMyPlayerCharacter::RefreshMorphInputContext(UMyMorphDataAsset* Data) // 刷
     UEnhancedInputLocalPlayerSubsystem* Subsystem = LP->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>();
     if (!Subsystem) return;
 
+
     // 移除旧的形态输入
     if (ActiveMorphMappingContext)
     {
@@ -556,29 +567,35 @@ void AMyPlayerCharacter::RefreshMorphAbilities(UMyMorphDataAsset* Data)
     if (!Data) return;
 
     // 1. 销毁旧的组件
-    for (UActorComponent* OldComp : ActiveMorphAbilities)
+    for (UMorphAbilityComponent* OldComp : ActiveMorphAbilities)
     {
+
         if (OldComp && OldComp->GetOwner() == this)
         {
+            OldComp->OnAbilityRemoved();
             OldComp->DestroyComponent();
         }
     }
     ActiveMorphAbilities.Empty();
 
     // 2. 创建新的组件
-    for (const TSubclassOf<UActorComponent>& CompClass : Data->AbilityComponents)
+    for (const TSubclassOf<UMorphAbilityComponent>& CompClass : Data->AbilityComponents)
     {
         if (CompClass)
         {
-            UActorComponent* NewComp = NewObject<UActorComponent>(this, CompClass, MakeUniqueObjectName(this, CompClass));
+            UMorphAbilityComponent* NewComp = NewObject<UMorphAbilityComponent>(this, CompClass, MakeUniqueObjectName(this, CompClass));
             if (NewComp)
             {
-                NewComp->RegisterComponent();
+                AddOwnedComponent(NewComp); // 注册到Actor Ownership
+                NewComp->OnAbilityAdded();
+                NewComp->RegisterComponent(); // 注册到world
                 ActiveMorphAbilities.Add(NewComp);
             }
         }
     }
 }
+
+
 
 void AMyPlayerCharacter::SaveData_Implementation(UMySaveGame* GameData)
 {

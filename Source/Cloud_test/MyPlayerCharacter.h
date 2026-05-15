@@ -8,6 +8,7 @@
 #include "MyPlayerCharacter.generated.h"
 
 class USkeletalMeshComponent; // 新增，用于动态形态
+class UMorphAbilityComponent;
 
 // Enhanced Input
 class UInputMappingContext;
@@ -84,6 +85,7 @@ public:
     UFUNCTION(BlueprintCallable)
     void EndDialogue();
 
+
 private:
     // ===== Enhanced Input callbacks =====
     void Move(const FInputActionValue& Value);
@@ -134,7 +136,7 @@ private:
     AMyCameraRigActor* CameraRigRef = nullptr;
 
     UPROPERTY()
-    TArray<UActorComponent*> ActiveMorphAbilities; // 当前形态激活的特殊能力组件
+    TArray<UMorphAbilityComponent*> ActiveMorphAbilities; // 当前形态激活的特殊能力组件
 
     UPROPERTY()
     TObjectPtr<class UInputMappingContext> ActiveMorphMappingContext = nullptr;

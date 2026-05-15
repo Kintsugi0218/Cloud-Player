@@ -8,6 +8,7 @@ class USkeletalMesh;
 class UMaterialInterface;
 class UActorComponent;
 class UInputMappingContext;
+class UMorphAbilityComponent;
 
 /**
  * @brief 形态数据资产，用于存储每个角色形态的配置。
@@ -44,7 +45,7 @@ public:
 
     // --- 特殊能力组件 ---
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Abilities")
-    TArray<TSubclassOf<UActorComponent>> AbilityComponents;
+    TArray<TSubclassOf<UMorphAbilityComponent>> AbilityComponents;
 
     // --- 形态专属输入映射 ---
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
@@ -56,6 +57,9 @@ public:
     // --- 解锁标签 ---
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Unlock")
     FName UnlockTag = NAME_None;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "CanJump")
+    bool bCanJump = true;
 
     virtual FPrimaryAssetId GetPrimaryAssetId() const override;
 };
