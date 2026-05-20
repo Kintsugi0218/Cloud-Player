@@ -455,7 +455,8 @@ void AYJL_GodotLevelHost::BuildFromTscn()
 {
     ClearGeneratedChildren();
 
-    if (TscnFilePath.IsEmpty())
+    FString ResolvedPath = ResolveTscnFilePath();
+    if (ResolvedPath.IsEmpty())
     {
         return;
     }
@@ -473,7 +474,7 @@ void AYJL_GodotLevelHost::BuildFromTscn()
 
     TArray<FTscnBlock> Blocks;
     FString Err;
-    if (!LoadTscnBlocks(TscnFilePath, Blocks, Err))
+    if (!LoadTscnBlocks(ResolvedPath, Blocks, Err))
     {
         ScreenLog(FColor::Red, Err);
         return;
@@ -795,7 +796,7 @@ void AYJL_GodotLevelHost::BuildFromTscn()
     const double Elapsed = FPlatformTime::Seconds() - StartT;
     ScreenLog(FColor::Green, FString::Printf(
         TEXT("已加载 %s | 生成 %d 节点 / 跳过 %d 节点 / 耗时 %.0f ms"),
-        *FPaths::GetCleanFilename(TscnFilePath), Spawned, Skipped, Elapsed * 1000.0));
+        *FPaths::GetCleanFilename(ResolvedPath), Spawned, Skipped, Elapsed * 1000.0));
 }
 
 void AYJL_GodotLevelHost::SpawnAsIndependentActors()
@@ -815,17 +816,18 @@ void AYJL_GodotLevelHost::SpawnAsIndependentActors()
         }
     };
 
-    if (TscnFilePath.IsEmpty())
+    FString ResolvedPath = ResolveTscnFilePath();
+    if (ResolvedPath.IsEmpty())
     {
         ScreenLog(FColor::Red, TEXT("TscnFilePath 路径为空，无法离散生成！"));
         return;
     }
 
-    ScreenLog(FColor::Cyan, FString::Printf(TEXT("正在离散生成独立 Actor：从 %s"), *FPaths::GetCleanFilename(TscnFilePath)));
+    ScreenLog(FColor::Cyan, FString::Printf(TEXT("正在离散生成独立 Actor：从 %s"), *FPaths::GetCleanFilename(ResolvedPath)));
 
     TArray<FTscnBlock> Blocks;
     FString Err;
-    if (!LoadTscnBlocks(TscnFilePath, Blocks, Err))
+    if (!LoadTscnBlocks(ResolvedPath, Blocks, Err))
     {
         ScreenLog(FColor::Red, Err);
         return;
@@ -1081,4 +1083,36 @@ void AYJL_GodotLevelHost::SpawnAsIndependentActors()
     ScreenLog(FColor::Green, FString::Printf(
         TEXT("【离散生成成功】已生成 %d 个独立的 Actor 到关卡 / 跳过 %d 节点 / 耗时 %.0f ms！"),
         Spawned, Skipped, Elapsed * 1000.0));
+}
+
+FString AYJL_GodotLevelHost::ResolveTscnFilePath() const
+{
+    if (TscnFilePath.IsEmpty())
+    {
+        return TscnFilePath;
+    }
+
+    // 1. 如果本身就是个存在的绝对路径文件，直接返回
+    if (FPaths::FileExists(TscnFilePath))
+    {
+        return TscnFilePath;
+    }
+
+    // 2. 如果是相对路径，尝试同项目根目录拼接
+    FString PathFromProject = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir() / TscnFilePath);
+    if (FPaths::FileExists(PathFromProject))
+    {
+        return PathFromProject;
+    }
+
+    // 3. 如果绝对路径不存在（例如 Windows 队友在不同盘符下），自动回退到同名文件查找 Content/YJL/GodotScene/<filename>
+    FString Filename = FPaths::GetCleanFilename(TscnFilePath);
+    FString FallbackPath = FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir() / TEXT("YJL/GodotScene") / Filename);
+    if (FPaths::FileExists(FallbackPath))
+    {
+        return FallbackPath;
+    }
+
+    // 兜底返回原路径
+    return TscnFilePath;
 }
