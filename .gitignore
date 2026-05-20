@@ -1,14 +1,10 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
 Binaries/
 DerivedDataCache/
 Intermediate/
 Saved/
 .vs/
 *.log
-=======
-=======
->>>>>>> 653abae23dab31c7ec801ba4f10a973624245a3c
+
 # Visual Studio 2015 user specific files
 .vs/
 
@@ -84,7 +80,3 @@ Plugins/**/Intermediate/*
 
 # Cache files for the editor to use
 DerivedDataCache/*
-<<<<<<< HEAD
->>>>>>> 653abae23dab31c7ec801ba4f10a973624245a3c
-=======
->>>>>>> 653abae23dab31c7ec801ba4f10a973624245a3c
