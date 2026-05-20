@@ -34,9 +34,9 @@ public:
 
     // ===== 配置（Details 面板可编辑）=====
 
-    // .tscn 文件路径（绝对路径，UTF-8）
+    // .tscn 文件路径（支持项目内相对路径如 "Content/YJL/GodotScene/main_level.tscn"，或绝对路径）
     UPROPERTY(EditAnywhere, Category = "YJL|Import")
-    FString TscnFilePath = TEXT("/Users/yangjianlin/游戏开发/GodotProject/cloud-project/main_level.tscn");
+    FString TscnFilePath = TEXT("Content/YJL/GodotScene/main_level.tscn");
 
     // Godot 1 单位 = UE UnitScale 厘米（默认 100，即 1m=100cm）
     UPROPERTY(EditAnywhere, Category = "YJL|Import", meta=(ClampMin="1.0"))
@@ -98,4 +98,7 @@ protected:
 
     // 主入口：读文件 + 解析 + 生成
     void BuildFromTscn();
+
+    // 智能路径解析：如果绝对路径不存在，自动回退查找 Content/YJL/GodotScene/
+    FString ResolveTscnFilePath() const;
 };

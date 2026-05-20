@@ -1,0 +1,582 @@
+[gd_scene load_steps=14 format=3]
+
+[ext_resource type="PackedScene" path="res://player.tscn" id="1_player"]
+[ext_resource type="PackedScene" path="res://npc.tscn" id="2_npc"]
+[ext_resource type="PackedScene" path="res://coin.tscn" id="3_coin"]
+[ext_resource type="PackedScene" path="res://hud.tscn" id="4_hud"]
+[ext_resource type="Material" path="res://materials/mat_safe_ground.tres" id="5_path"]
+[ext_resource type="Material" path="res://materials/mat_jump_platform.tres" id="6_tree"]
+[ext_resource type="Material" path="res://materials/mat_house_base.tres" id="7_base"]
+[ext_resource type="Material" path="res://materials/mat_house_roof.tres" id="8_roof"]
+[ext_resource type="Material" path="res://materials/mat_building.tres" id="9_crate"]
+[ext_resource type="Material" path="res://materials/mat_guidance.tres" id="10_guide"]
+[ext_resource type="Material" path="res://materials/mat_interactable.tres" id="11_landmark"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_1"]
+sky_top_color = Color(0.384314, 0.454902, 0.54902, 1)
+sky_horizon_color = Color(0.71, 0.79, 0.85, 1)
+ground_bottom_color = Color(0.22, 0.2, 0.18, 1)
+ground_horizon_color = Color(0.55, 0.5, 0.42, 1)
+sun_angle_max = 50.0
+
+[sub_resource type="Sky" id="Sky_1"]
+sky_material = SubResource("ProceduralSkyMaterial_1")
+
+[sub_resource type="Environment" id="Environment_1"]
+background_mode = 2
+sky = SubResource("Sky_1")
+ambient_light_source = 3
+tonemap_mode = 2
+fog_enabled = true
+fog_light_color = Color(0.78, 0.82, 0.88, 1)
+fog_density = 0.004
+fog_sky_affect = 0.3
+
+[node name="VillageLevel" type="Node3D"]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_1")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(-0.866025, -0.433013, 0.25, 0, 0.5, 0.866025, -0.5, 0.75, -0.433013, 0, 0, 0)
+light_energy = 1.1
+shadow_enabled = true
+
+[node name="HUD" parent="." instance=ExtResource("4_hud")]
+
+[node name="Player" parent="." instance=ExtResource("1_player")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
+
+; =========================================================
+; 地形层：入口 -> 连接路 -> 主广场 -> 上层台地 -> 后山
+; =========================================================
+[node name="Terrain" type="Node3D" parent="."]
+
+[node name="EntrancePlatform" type="CSGBox3D" parent="Terrain"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.75, 0)
+use_collision = true
+size = Vector3(16, 1.5, 16)
+material = ExtResource("5_path")
+
+[node name="ConnectingPath" type="CSGBox3D" parent="Terrain"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, -18)
+use_collision = true
+size = Vector3(8, 1, 20)
+material = ExtResource("5_path")
+
+; 主广场大幅扩大：原 40x34 -> 70x56
+[node name="VillagePlaza" type="CSGBox3D" parent="Terrain"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, -52)
+use_collision = true
+size = Vector3(70, 0.5, 56)
+material = ExtResource("5_path")
+
+; 西侧上层台地（高 2.5，需跳两级石阶上去）
+[node name="UpperTerraceWest" type="CSGBox3D" parent="Terrain"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -30, 1.75, -52)
+use_collision = true
+size = Vector3(14, 3.5, 40)
+material = ExtResource("5_path")
+
+; 东侧上层台地（较低，1.5 米，可直接跳上）
+[node name="UpperTerraceEast" type="CSGBox3D" parent="Terrain"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 30, 1.0, -52)
+use_collision = true
+size = Vector3(14, 2.0, 40)
+material = ExtResource("5_path")
+
+; 北侧后山（最高层 4 米，通过林间跳跃小径到达）
+[node name="NorthHill" type="CSGBox3D" parent="Terrain"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, -82)
+use_collision = true
+size = Vector3(30, 5.0, 14)
+material = ExtResource("5_path")
+
+; 后山石阶 1（从广场到后山的引导路径）
+[node name="HillStep1" type="CSGBox3D" parent="Terrain"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 1.25, -73)
+use_collision = true
+size = Vector3(6, 2.5, 4)
+material = ExtResource("5_path")
+
+[node name="HillStep2" type="CSGBox3D" parent="Terrain"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 2.25, -76)
+use_collision = true
+size = Vector3(6, 4.5, 4)
+material = ExtResource("5_path")
+
+; 围合矮墙：让广场有边界感（靠南侧，不挡入口）
+[node name="BorderWallEast" type="CSGBox3D" parent="Terrain"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 37.5, 1.5, -40)
+use_collision = true
+size = Vector3(1, 2, 30)
+material = ExtResource("9_crate")
+
+[node name="BorderWallWest" type="CSGBox3D" parent="Terrain"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -37.5, 1.5, -40)
+use_collision = true
+size = Vector3(1, 2, 30)
+material = ExtResource("9_crate")
+
+; =========================================================
+; 建筑层：核心房屋 + 钟楼（制高点）+ 小屋
+; =========================================================
+[node name="VillageStructures" type="Node3D" parent="."]
+
+; --- House 1：西侧大屋（位于上层台地上）---
+[node name="House1_West" type="CSGBox3D" parent="VillageStructures"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -30, 6.0, -56)
+use_collision = true
+size = Vector3(9, 5, 8)
+material = ExtResource("7_base")
+
+[node name="Roof1" type="CSGCylinder3D" parent="VillageStructures/House1_West"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.0, 0)
+use_collision = true
+cone = true
+radius = 6.0
+height = 3.0
+material = ExtResource("8_roof")
+
+; --- House 2：东侧商屋 ---
+[node name="House2_East" type="CSGBox3D" parent="VillageStructures"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 26, 4.0, -48)
+use_collision = true
+size = Vector3(10, 5, 6)
+material = ExtResource("7_base")
+
+[node name="Roof2" type="CSGCylinder3D" parent="VillageStructures/House2_East"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.0, 0)
+use_collision = true
+cone = true
+radius = 6.0
+height = 3.0
+material = ExtResource("8_roof")
+
+; --- House 3：中后排大屋 ---
+[node name="House3_CenterBack" type="CSGBox3D" parent="VillageStructures"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 3.0, -68)
+use_collision = true
+size = Vector3(12, 5, 8)
+material = ExtResource("7_base")
+
+[node name="Roof3" type="CSGCylinder3D" parent="VillageStructures/House3_CenterBack"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.0, 0)
+use_collision = true
+cone = true
+radius = 7.5
+height = 3.0
+material = ExtResource("8_roof")
+
+; --- House 4：东北小屋（位于上层台地）---
+[node name="House4_NorthEast" type="CSGBox3D" parent="VillageStructures"]
+transform = Transform3D(0.939693, 0, -0.34202, 0, 1, 0, 0.34202, 0, 0.939693, 28, 4.0, -66)
+use_collision = true
+size = Vector3(7, 4, 7)
+material = ExtResource("7_base")
+
+[node name="Roof4" type="CSGCylinder3D" parent="VillageStructures/House4_NorthEast"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.5, 0)
+use_collision = true
+cone = true
+radius = 5.0
+height = 2.5
+material = ExtResource("8_roof")
+
+; --- House 5：西南小屋（稍微旋转打破对称）---
+[node name="House5_SouthWest" type="CSGBox3D" parent="VillageStructures"]
+transform = Transform3D(0.866025, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866025, -18, 2.5, -34)
+use_collision = true
+size = Vector3(7, 4, 6)
+material = ExtResource("7_base")
+
+[node name="Roof5" type="CSGCylinder3D" parent="VillageStructures/House5_SouthWest"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.5, 0)
+use_collision = true
+cone = true
+radius = 5.0
+height = 2.5
+material = ExtResource("8_roof")
+
+; --- Clock Tower 钟楼：村庄最高制高点（3 层，顶部藏金币）---
+[node name="ClockTower" type="Node3D" parent="VillageStructures"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, -58)
+
+[node name="Base" type="CSGBox3D" parent="VillageStructures/ClockTower"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.25, 0)
+use_collision = true
+size = Vector3(6, 6, 6)
+material = ExtResource("7_base")
+
+[node name="MidTier" type="CSGBox3D" parent="VillageStructures/ClockTower"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 8.5, 0)
+use_collision = true
+size = Vector3(4.5, 5, 4.5)
+material = ExtResource("7_base")
+
+[node name="TopTier" type="CSGBox3D" parent="VillageStructures/ClockTower"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 12.5, 0)
+use_collision = true
+size = Vector3(3, 3, 3)
+material = ExtResource("11_landmark")
+
+[node name="Spire" type="CSGCylinder3D" parent="VillageStructures/ClockTower"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 15.5, 0)
+use_collision = true
+cone = true
+radius = 1.5
+height = 3.0
+material = ExtResource("8_roof")
+
+; 钟楼外围攀爬平台（从广场引导到塔顶的跳跃路径）
+[node name="ClimbLedge1" type="CSGBox3D" parent="VillageStructures/ClockTower"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.5, 2.5, 0)
+use_collision = true
+size = Vector3(2, 0.5, 2)
+material = ExtResource("6_tree")
+
+[node name="ClimbLedge2" type="CSGBox3D" parent="VillageStructures/ClockTower"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.0, 5.0, -1.5)
+use_collision = true
+size = Vector3(2, 0.5, 2)
+material = ExtResource("6_tree")
+
+[node name="ClimbLedge3" type="CSGBox3D" parent="VillageStructures/ClockTower"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.0, 7.0, -3.0)
+use_collision = true
+size = Vector3(2, 0.5, 2)
+material = ExtResource("6_tree")
+
+; =========================================================
+; 中央地标：水井 + 雕像底座（NPC 聚集点）
+; =========================================================
+[node name="Landmarks" type="Node3D" parent="."]
+
+[node name="WellRing" type="CSGCylinder3D" parent="Landmarks"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.0, -46)
+use_collision = true
+radius = 2.5
+height = 1.5
+material = ExtResource("9_crate")
+
+[node name="WellHole" type="CSGCylinder3D" parent="Landmarks/WellRing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.3, 0)
+operation = 2
+radius = 1.8
+height = 1.6
+
+[node name="WellPost1" type="CSGBox3D" parent="Landmarks"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.3, 3.0, -46)
+use_collision = true
+size = Vector3(0.4, 4, 0.4)
+material = ExtResource("9_crate")
+
+[node name="WellPost2" type="CSGBox3D" parent="Landmarks"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.3, 3.0, -46)
+use_collision = true
+size = Vector3(0.4, 4, 0.4)
+material = ExtResource("9_crate")
+
+[node name="WellBeam" type="CSGBox3D" parent="Landmarks"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5.1, -46)
+use_collision = true
+size = Vector3(5, 0.3, 0.3)
+material = ExtResource("9_crate")
+
+; 雕像基座（指示性地标）
+[node name="StatueBase" type="CSGBox3D" parent="Landmarks"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.25, -38)
+use_collision = true
+size = Vector3(3, 2, 3)
+material = ExtResource("11_landmark")
+
+[node name="StatueBody" type="CSGCylinder3D" parent="Landmarks/StatueBase"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.25, 0)
+use_collision = true
+radius = 0.6
+height = 2.5
+material = ExtResource("11_landmark")
+
+[node name="StatueHead" type="CSGSphere3D" parent="Landmarks/StatueBase"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.0, 0)
+use_collision = true
+radius = 0.7
+material = ExtResource("11_landmark")
+
+; =========================================================
+; 装饰层：树林 + 花坛 + 桶堆（自然非对称分布）
+; =========================================================
+[node name="Decorations" type="Node3D" parent="."]
+
+; 入口小径两侧的引导树
+[node name="Tree_Entry1" type="CSGCylinder3D" parent="Decorations"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.5, 3.5, -10)
+use_collision = true
+radius = 0.8
+height = 5.0
+material = ExtResource("6_tree")
+
+[node name="Tree_Entry2" type="CSGCylinder3D" parent="Decorations"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 4.0, -14)
+use_collision = true
+radius = 1.0
+height = 6.0
+material = ExtResource("6_tree")
+
+; 广场南侧果园（左右非对称分布的 4 棵树）
+[node name="Tree_OrchardA" type="CSGCylinder3D" parent="Decorations"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -24, 3.5, -30)
+use_collision = true
+radius = 1.3
+height = 5.0
+material = ExtResource("6_tree")
+
+[node name="Tree_OrchardB" type="CSGCylinder3D" parent="Decorations"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -20, 4.0, -34)
+use_collision = true
+radius = 1.6
+height = 6.0
+material = ExtResource("6_tree")
+
+[node name="Tree_OrchardC" type="CSGCylinder3D" parent="Decorations"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 4.0, -30)
+use_collision = true
+radius = 1.6
+height = 6.0
+material = ExtResource("6_tree")
+
+[node name="Tree_OrchardD" type="CSGCylinder3D" parent="Decorations"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 25, 3.0, -38)
+use_collision = true
+radius = 1.2
+height = 4.5
+material = ExtResource("6_tree")
+
+; 后山树林（围合高处，藏金币）
+[node name="Tree_HillA" type="CSGCylinder3D" parent="Decorations"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10, 8.5, -80)
+use_collision = true
+cone = true
+radius = 2.0
+height = 6.0
+material = ExtResource("6_tree")
+
+[node name="Tree_HillB" type="CSGCylinder3D" parent="Decorations"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 8.5, -82)
+use_collision = true
+cone = true
+radius = 2.2
+height = 7.0
+material = ExtResource("6_tree")
+
+[node name="Tree_HillC" type="CSGCylinder3D" parent="Decorations"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 9.0, -86)
+use_collision = true
+cone = true
+radius = 1.8
+height = 6.5
+material = ExtResource("6_tree")
+
+; 广场北侧花坛（装饰性矮丛）
+[node name="Shrub1" type="CSGSphere3D" parent="Decorations"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 1.3, -55)
+use_collision = true
+radius = 1.0
+material = ExtResource("6_tree")
+
+[node name="Shrub2" type="CSGSphere3D" parent="Decorations"]
+transform = Transform3D(1.3, 0, 0, 0, 1, 0, 0, 0, 1.3, -6, 1.3, -56)
+use_collision = true
+radius = 1.0
+material = ExtResource("6_tree")
+
+[node name="Shrub3" type="CSGSphere3D" parent="Decorations"]
+transform = Transform3D(0.9, 0, 0, 0, 0.9, 0, 0, 0, 0.9, 6, 1.1, -55)
+use_collision = true
+radius = 1.0
+material = ExtResource("6_tree")
+
+[node name="Shrub4" type="CSGSphere3D" parent="Decorations"]
+transform = Transform3D(1.4, 0, 0, 0, 1, 0, 0, 0, 1.4, 8, 1.3, -56.5)
+use_collision = true
+radius = 1.0
+material = ExtResource("6_tree")
+
+; 木桶堆（House2 旁，可踩踏）
+[node name="Crate1" type="CSGBox3D" parent="Decorations"]
+transform = Transform3D(0.866025, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866025, 22, 1.0, -42)
+use_collision = true
+size = Vector3(1.2, 1.2, 1.2)
+material = ExtResource("9_crate")
+
+[node name="Crate2" type="CSGBox3D" parent="Decorations"]
+transform = Transform3D(0.965926, 0, -0.258819, 0, 1, 0, 0.258819, 0, 0.965926, 23.5, 1.0, -41.5)
+use_collision = true
+size = Vector3(1.2, 1.2, 1.2)
+material = ExtResource("9_crate")
+
+[node name="Crate3" type="CSGBox3D" parent="Decorations"]
+transform = Transform3D(0.707107, 0, 0.707107, 0, 1, 0, -0.707107, 0, 0.707107, 22.7, 2.2, -41.8)
+use_collision = true
+size = Vector3(1.2, 1.2, 1.2)
+material = ExtResource("9_crate")
+
+; 广场西侧箱堆（通往 House1 屋顶的跳板）
+[node name="CrateStack1" type="CSGBox3D" parent="Decorations"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -23, 1.0, -48)
+use_collision = true
+size = Vector3(1.5, 1.5, 1.5)
+material = ExtResource("9_crate")
+
+[node name="CrateStack2" type="CSGBox3D" parent="Decorations"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -23, 2.5, -49.5)
+use_collision = true
+size = Vector3(1.5, 1.5, 1.5)
+material = ExtResource("9_crate")
+
+; 引导黄色方块（视觉引导，指明跳跃路径）
+[node name="GuideCube1" type="CSGBox3D" parent="Decorations"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18, 1.5, -58)
+use_collision = true
+size = Vector3(1.5, 0.4, 1.5)
+material = ExtResource("10_guide")
+
+[node name="GuideCube2" type="CSGBox3D" parent="Decorations"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 2.5, -58)
+use_collision = true
+size = Vector3(1.5, 0.4, 1.5)
+material = ExtResource("10_guide")
+
+; =========================================================
+; 跳跃平台：屋顶间连跳路径（引导玩家到钟楼顶）
+; =========================================================
+[node name="JumpPlatforms" type="Node3D" parent="."]
+
+; 从 House2 屋顶到 ClockTower 的连接平台
+[node name="RoofHop1" type="CSGBox3D" parent="JumpPlatforms"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 7.5, -52)
+use_collision = true
+size = Vector3(2.5, 0.4, 2.5)
+material = ExtResource("6_tree")
+
+[node name="RoofHop2" type="CSGBox3D" parent="JumpPlatforms"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 8.5, -55)
+use_collision = true
+size = Vector3(2.5, 0.4, 2.5)
+material = ExtResource("6_tree")
+
+; 从 House3 屋顶跳到后山的辅助平台
+[node name="HillBridge1" type="CSGBox3D" parent="JumpPlatforms"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 7.0, -75)
+use_collision = true
+size = Vector3(3, 0.4, 2.5)
+material = ExtResource("6_tree")
+
+; =========================================================
+; NPC：2 个对话 NPC，分散在广场入口和商店区域
+; =========================================================
+[node name="NPCs" type="Node3D" parent="."]
+
+[node name="NPC_VillageElder" parent="NPCs" instance=ExtResource("2_npc")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, -42)
+npc_name = "村长"
+dialog_text = "欢迎来到云之村庄！试试爬上那座钟楼吧——传说上面藏着宝物。"
+
+[node name="NPC_Merchant" parent="NPCs" instance=ExtResource("2_npc")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 22, 1.5, -48)
+npc_name = "商人"
+dialog_text = "想买货？哈！先去收集那些闪亮的金币吧，旅行者。"
+
+[node name="NPC_Farmer" parent="NPCs" instance=ExtResource("2_npc")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -22, 0.5, -32)
+npc_name = "农夫"
+dialog_text = "我的果园安静得很。如果你会跳跃，远处的小山藏着隐秘的小径哦。"
+
+; =========================================================
+; 金币分布（22 枚）
+; - 引导层：沿路径铺设，教玩家识别金币 (8)
+; - 奖励层：需要跳跃/攀爬 (10)
+; - 隐藏层：需要主动探索 (4)
+; =========================================================
+[node name="Coins" type="Node3D" parent="."]
+
+; --- 引导层：从入口到广场的线性分布 ---
+[node name="Coin_Guide1" parent="Coins" instance=ExtResource("3_coin")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.0, -10)
+
+[node name="Coin_Guide2" parent="Coins" instance=ExtResource("3_coin")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.0, -18)
+
+[node name="Coin_Guide3" parent="Coins" instance=ExtResource("3_coin")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.0, -26)
+
+[node name="Coin_Guide4" parent="Coins" instance=ExtResource("3_coin")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 1.5, -42)
+
+[node name="Coin_Guide5" parent="Coins" instance=ExtResource("3_coin")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 1.5, -42)
+
+[node name="Coin_Guide6" parent="Coins" instance=ExtResource("3_coin")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 1.5, -46)
+
+[node name="Coin_Guide7" parent="Coins" instance=ExtResource("3_coin")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 1.5, -52)
+
+[node name="Coin_Guide8" parent="Coins" instance=ExtResource("3_coin")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, -60)
+
+; --- 奖励层：跳跃/攀爬路径 ---
+; 箱堆顶（引导去 House1 屋顶）
+[node name="Coin_CrateStack" parent="Coins" instance=ExtResource("3_coin")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -23, 4.5, -49.5)
+
+; House1 屋顶
+[node name="Coin_House1Roof" parent="Coins" instance=ExtResource("3_coin")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -30, 10.0, -56)
+
+; House5 屋顶
+[node name="Coin_House5Roof" parent="Coins" instance=ExtResource("3_coin")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -18, 6.0, -34)
+
+; House2 屋顶（商屋屋顶）
+[node name="Coin_House2Roof" parent="Coins" instance=ExtResource("3_coin")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 26, 8.0, -48)
+
+; 屋顶跳跃路径
+[node name="Coin_RoofHop1" parent="Coins" instance=ExtResource("3_coin")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 8.8, -52)
+
+[node name="Coin_RoofHop2" parent="Coins" instance=ExtResource("3_coin")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 9.8, -55)
+
+; 钟楼攀爬平台
+[node name="Coin_ClimbLedge1" parent="Coins" instance=ExtResource("3_coin")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14.5, 3.0, -58)
+
+[node name="Coin_ClimbLedge2" parent="Coins" instance=ExtResource("3_coin")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 5.5, -59.5)
+
+; 上层台地东
+[node name="Coin_TerraceEast" parent="Coins" instance=ExtResource("3_coin")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 32, 2.5, -42)
+
+; 上层台地西
+[node name="Coin_TerraceWest" parent="Coins" instance=ExtResource("3_coin")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -32, 4.0, -42)
+
+; --- 隐藏层：探索奖励 ---
+; 钟楼塔顶（制高点）
+[node name="Coin_ClockTowerTop" parent="Coins" instance=ExtResource("3_coin")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 14.5, -58)
+
+; 后山顶（需通过石阶+跳跃）
+[node name="Coin_HillTop" parent="Coins" instance=ExtResource("3_coin")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5.8, -82)
+
+; 水井井栏上（需要精准跳跃）
+[node name="Coin_WellBeam" parent="Coins" instance=ExtResource("3_coin")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5.8, -46)
+
+; House3 屋顶（大屋顶中央）
+[node name="Coin_House3Roof" parent="Coins" instance=ExtResource("3_coin")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 8.0, -68)
