@@ -3,11 +3,12 @@
 
 #include "BearPushAbility.h"
 #include "MyPlayerCharacter.h"
+#include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
 UBearPushAbility::UBearPushAbility()
 {
-	PrimaryComponentTick.bCanEverTick = true;
+	PrimaryComponentTick.bCanEverTick = true; 
 }
 
 bool UBearPushAbility::HandleAbilityInputPressed_Implementation(int32 SlotIndex)
@@ -16,38 +17,28 @@ bool UBearPushAbility::HandleAbilityInputPressed_Implementation(int32 SlotIndex)
 		return false;
 	}
 
-	if (!bIsPushing) 
+	if (!bIsCarrying) 
 	{
-		TryStartPush();
+		TryStartCarry();
 	}
 	else 
 	{
-		StopPush();
+		StopCarry();
 	}
 	return true;
 }
 
 void UBearPushAbility::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
-	if (!bIsPushing)
-	{
-		return;
-	}
-
-	if (!CachedPlayer || !CurrentPushActor)
-	{
-		return;
-	}
-
-	FVector PlayerDelta = CachedPlayer->GetVelocity() * DeltaTime;
-
-	CurrentPushActor->AddActorWorldOffset(PlayerDelta,true);
+	Super::TickComponent(
+		DeltaTime,
+		TickType,
+		ThisTickFunction);
 }
 
 
 
-
-void UBearPushAbility::TryStartPush()
+void UBearPushAbility::TryStartCarry()
 {
 	if (!CachedPlayer) return;
 
@@ -56,48 +47,64 @@ void UBearPushAbility::TryStartPush()
 	if (!Target) return;
 	if (!Target->CanBePushed()) return;
 
-	CurrentPushActor = Target;
+	CurrentCarryActor = Target;
 
-	bIsPushing = true;
-
-	CachedPlayer->CurrentMorphData->bCanJump = false;
-
-	Target->BeginPush(CachedPlayer);
-
-	// 玩家移动到推动点
-	CachedPlayer->SetActorLocation(Target->PushPoint->GetComponentLocation());
-
-	CachedPlayer->SetActorRotation(Target->PushPoint->GetComponentRotation());
-
-	// 锁定旋转
-	CachedPlayer->bUseControllerRotationYaw = false;
+	bIsCarrying = true;
 
 	auto* MoveComp = CachedPlayer->GetCharacterMovement();
 
 	if (MoveComp)
 	{
-		MoveComp->MaxWalkSpeed = PushSpeed;
-		MoveComp->bOrientRotationToMovement = false;
+		MoveComp->MaxWalkSpeed = CarrySpeed;
 	}
 
+	UPrimitiveComponent* Collision = Target->ActorCollision;
+
+	if (Collision)
+	{
+		bCachedPhysics = Collision->IsSimulatingPhysics();
+
+		Collision->SetSimulatePhysics(false);
+
+		Collision->IgnoreActorWhenMoving(CachedPlayer, true);
+
+		CachedPlayer->GetCapsuleComponent()->IgnoreActorWhenMoving(Target, true);
+	}
+
+	// Attach 到 CarryPoint
+	Target->AttachToComponent(CachedPlayer->CarryPoint,FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+
+	Target->BeginCarry(CachedPlayer);
 
 	// 然后播放推动动画
 }
 
-void UBearPushAbility::StopPush()
+void UBearPushAbility::StopCarry()
 {
-	if (!bIsPushing)
+	if (!bIsCarrying)
 	{
 		return;
 	}
 
-	bIsPushing = false;
+	bIsCarrying = false;
 
-	CachedPlayer->CurrentMorphData->bCanJump = true;
-
-	if (CurrentPushActor)
+	if (CurrentCarryActor)
 	{
-		CurrentPushActor->EndPush();
+		CurrentCarryActor->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+
+		UPrimitiveComponent* Collision = CurrentCarryActor->ActorCollision;
+
+		if (Collision)
+		{
+			Collision->SetSimulatePhysics(bCachedPhysics);
+
+			Collision->IgnoreActorWhenMoving(CachedPlayer, false);
+
+			CachedPlayer->GetCapsuleComponent()->IgnoreActorWhenMoving(CurrentCarryActor, false);
+		}
+
+
+		CurrentCarryActor->EndCarry();
 	}
 
 
@@ -107,13 +114,15 @@ void UBearPushAbility::StopPush()
 
 		if (MoveComp)
 		{
-			MoveComp->bOrientRotationToMovement = true;
 			MoveComp->MaxWalkSpeed = CachedPlayer->CurrentMorphData->MaxWalkSpeed;
 		}
 	}
 
+
+	CurrentCarryActor = nullptr;
 	// 接下来恢复正常动画
 }
+
 
 APushableActor* UBearPushAbility::FindPushableActor()
 {
@@ -143,6 +152,44 @@ APushableActor* UBearPushAbility::FindPushableActor()
 	return Cast<APushableActor>(Hit.GetActor());
 }
 
+bool UBearPushAbility::IsCarryBlocked(FVector MoveDirection) const
+{
+	if (!bIsCarrying)
+	{
+		return false;
+	}
+
+	if (!CurrentCarryActor)
+	{
+		return false;
+	}
+
+	FVector Start = CurrentCarryActor->ActorCollision->GetComponentLocation();
+
+	FVector End = Start + MoveDirection * 50.f;
+
+	FCollisionShape Shape = CurrentCarryActor->ActorCollision->GetCollisionShape();
+
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(CachedPlayer);
+	Params.AddIgnoredActor(CurrentCarryActor);
+
+	FHitResult Hit;
+
+	bool bBlocked =
+		GetWorld()->SweepSingleByChannel(
+			Hit,
+			Start,
+			End,
+			FQuat::Identity,
+			ECC_GameTraceChannel1,
+			Shape,
+			Params
+		);
+
+	return bBlocked;
+}
+
 
 void UBearPushAbility::OnAbilityAdded_Implementation()
 {
@@ -154,5 +201,5 @@ void UBearPushAbility::OnAbilityRemoved_Implementation()
 {
 	Super::OnAbilityRemoved_Implementation();
 
-	StopPush();
+	StopCarry();
 }

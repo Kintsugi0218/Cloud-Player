@@ -25,6 +25,7 @@
 
 
 #include "MorphAbilityComponent.h"
+#include "BearPushAbility.h"
 
 // Camera Rig
 #include "MyCameraRigActor.h"
@@ -51,6 +52,9 @@ AMyPlayerCharacter::AMyPlayerCharacter()
     GetCharacterMovement()->GravityScale = 0.35f; // ≥ı º÷µ
 
     UnlockedMorphTags = { FName(TEXT("Morph.Default")) };
+
+    CarryPoint = CreateDefaultSubobject<USceneComponent>(TEXT("PushPoint"));
+    CarryPoint->SetupAttachment(GetMesh());
 }
 
 void AMyPlayerCharacter::BeginPlay()
@@ -186,15 +190,31 @@ void AMyPlayerCharacter::Move(const FInputActionValue& Value)
     const FVector Forward = FRotationMatrix(CamYaw).GetUnitAxis(EAxis::X);
     const FVector Right = FRotationMatrix(CamYaw).GetUnitAxis(EAxis::Y);
 
+    FVector DesiredMove =
+        Forward * MoveValue.Y +
+        Right * MoveValue.X;
+
+    for (UMorphAbilityComponent* Comp : ActiveMorphAbilities)
+    {
+        UBearPushAbility* BearAbility = Cast<UBearPushAbility>(Comp);
+
+        if (!BearAbility)
+        {
+            continue;
+        }
+
+        if (BearAbility->IsCarryBlocked(DesiredMove.GetSafeNormal()))
+        {
+            return;
+        }
+    }
+
     AddMovementInput(Forward, MoveValue.Y);
     AddMovementInput(Right, MoveValue.X);
 }
 
 void AMyPlayerCharacter::JumpStarted(const FInputActionValue& Value)
 {
-    if (!CurrentMorphData->bCanJump) {
-        return;
-    }
     bJumpHeld = true;
 }
 

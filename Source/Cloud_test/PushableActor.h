@@ -31,21 +31,20 @@ public:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
     TObjectPtr<UStaticMeshComponent> Mesh;
 
-    // 玩家站位点 -- 可以取消这个从而不强制要求站位
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-    TObjectPtr<USceneComponent> PushPoint; // USceneComponent是只有Transform的组件
-
     // 检测区域
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
     TObjectPtr<UBoxComponent> InteractionBox;
 
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+    UBoxComponent* ActorCollision;
+
     // 是否正在被推动
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-    bool bBeingPushed = false;
+    bool bBeingCarried = false;
 
     // 当前推动者
     UPROPERTY()
-    TObjectPtr<class AMyPlayerCharacter> CurrentPusher;
+    TObjectPtr<class AMyPlayerCharacter> CurrentCarrier;
 
     // 当前是否可以被推动(推到指定位置之后就不允许挪动，除非需要再次利用）
     UPROPERTY()
@@ -56,7 +55,7 @@ public:
 
     bool CanBePushed() const;
 
-    void BeginPush(class AMyPlayerCharacter* Player);
+    void BeginCarry(class AMyPlayerCharacter* Player);
 
-    void EndPush();
+    void EndCarry();
 };

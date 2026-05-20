@@ -15,12 +15,18 @@ APushableActor::APushableActor()
 
 	Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
 	Mesh->SetupAttachment(Root);
-
-	PushPoint = CreateDefaultSubobject<USceneComponent>(TEXT("PushPoint"));
-	PushPoint->SetupAttachment(Root);
+	Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	InteractionBox = CreateDefaultSubobject<UBoxComponent>(TEXT("InteractionBox"));
 	InteractionBox->SetupAttachment(Root);
+	InteractionBox->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	InteractionBox->SetCollisionResponseToAllChannels(ECR_Ignore);
+	InteractionBox->SetCollisionResponseToChannel(ECC_Pawn,ECR_Overlap);
+
+	ActorCollision = CreateDefaultSubobject<UBoxComponent>(TEXT("ActorCollision"));
+	ActorCollision->SetupAttachment(Root);
+	ActorCollision->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	ActorCollision->SetCollisionResponseToAllChannels(ECR_Block);
 
 	Mesh->SetSimulatePhysics(false);
 }
@@ -40,20 +46,20 @@ void APushableActor::Tick(float DeltaTime)
 
 bool APushableActor::CanBePushed() const
 {
-	return !bBeingPushed && bCanBePushed;
+	return !bBeingCarried && bCanBePushed;
 }
 
-void APushableActor::BeginPush(AMyPlayerCharacter* Player)
+void APushableActor::BeginCarry(AMyPlayerCharacter* Player)
 {
-	bBeingPushed = true;
-	CurrentPusher = Player;
+	bBeingCarried = true;
+	CurrentCarrier = Player;
 }
 
 
-void APushableActor::EndPush()
+void APushableActor::EndCarry()
 {
-	bBeingPushed = false;
-	CurrentPusher = nullptr;
+	bBeingCarried = false;
+	CurrentCarrier = nullptr;
 }
 
 
