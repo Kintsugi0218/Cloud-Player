@@ -86,6 +86,11 @@ public:
     void EndDialogue();
 
 
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+    TObjectPtr<USceneComponent> CarryPoint; // USceneComponent是只有Transform的组件
+
+
 private:
     // ===== Enhanced Input callbacks =====
     void Move(const FInputActionValue& Value);

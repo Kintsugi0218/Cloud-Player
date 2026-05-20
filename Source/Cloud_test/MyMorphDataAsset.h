@@ -58,8 +58,5 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Unlock")
     FName UnlockTag = NAME_None;
 
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "CanJump")
-    bool bCanJump = true;
-
     virtual FPrimaryAssetId GetPrimaryAssetId() const override;
 };

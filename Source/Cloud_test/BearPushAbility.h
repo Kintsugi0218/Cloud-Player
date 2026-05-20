@@ -22,17 +22,18 @@ public:
 	
 protected:
 	UPROPERTY(VisibleAnywhere)
-	bool bIsPushing = false;
+	bool bIsCarrying = false;
 
 	UPROPERTY()
-	TObjectPtr<APushableActor> CurrentPushActor;
+	TObjectPtr<APushableActor> CurrentCarryActor;
 
 	UPROPERTY(EditAnywhere)
 	float CheckDistance = 150.f;
 
 	UPROPERTY(EditAnywhere)
-	float PushSpeed = 100.f;
+	float CarrySpeed = 100.f;
 
+	bool bCachedPhysics = false;
 
 public:
 
@@ -47,11 +48,14 @@ public:
 	virtual void OnAbilityAdded_Implementation() override;
 
 	virtual void OnAbilityRemoved_Implementation() override;
+
+	bool IsCarryBlocked(FVector MoveDirection) const;
 private:
 
-	void TryStartPush();
+	void TryStartCarry();
 
-	void StopPush();
+	void StopCarry();
+
 
 	APushableActor* FindPushableActor();
 };
