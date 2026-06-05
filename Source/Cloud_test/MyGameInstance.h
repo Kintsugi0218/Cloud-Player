@@ -33,6 +33,9 @@ public:
 
 	USaveManager* GetSaveManager() const { return SaveManager; }
 
+	UPROPERTY(BlueprintReadWrite,EditAnywhere)
+	UMySaveGame* GameData;
+
 private:
 
 	UPROPERTY()

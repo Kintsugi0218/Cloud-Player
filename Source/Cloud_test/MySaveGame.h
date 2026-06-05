@@ -10,32 +10,42 @@
 class AMyPlayerCharacter;
 class UMyMorphDataAsset;
 
-
 UCLASS()
 class CLOUD_TEST_API UMySaveGame : public USaveGame
 {
 	GENERATED_BODY()
-	
-public:
-	
-	UPROPERTY() // 需要保存的变量都要管理
-	FVector PlayerLocation;
 
-	UPROPERTY()
+public:
+
+	UPROPERTY(SaveGame) // 需要保存的变量都要管理
+		FVector PlayerLocation;
+
+	UPROPERTY(SaveGame)
 	TArray<UMyMorphDataAsset*> UnlockedMorphs;
 
-	UPROPERTY()
+	UPROPERTY(SaveGame)
 	UMyMorphDataAsset* LastMorph;
 
-	UPROPERTY()
+	UPROPERTY(SaveGame)
 	FVector CameraRigPosition;
 
-	UPROPERTY()
+	UPROPERTY(SaveGame)
 	FMyCameraProfile VolumeProfile;
 
 
-	UPROPERTY()
+	UPROPERTY(SaveGame)
 	TMap<FString, FVector> NPCPositions;
-	UPROPERTY()
+
+	UPROPERTY(SaveGame)
 	TMap<FString, bool> NPCAbility;
+
+	UPROPERTY(SaveGame)
+	TMap<FString, FVector> PushActorPositions;
+
+	UPROPERTY(SaveGame)
+	TMap<FString, bool> bPushActorCanBePushed;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, SaveGame)
+	TMap<FName, FKey> Currentkey;
+
 };

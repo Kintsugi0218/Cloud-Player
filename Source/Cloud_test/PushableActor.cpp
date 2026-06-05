@@ -3,6 +3,7 @@
 #include "Components/BoxComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "MyPlayerCharacter.h"
+#include "MySaveGame.h"
 
 
 APushableActor::APushableActor()
@@ -61,5 +62,23 @@ void APushableActor::EndCarry()
 	bBeingCarried = false;
 	CurrentCarrier = nullptr;
 }
+
+void APushableActor::SaveData_Implementation(UMySaveGame* GameData)
+{
+	GameData->PushActorPositions.Add(PushActorID, GetActorLocation());
+	GameData->bPushActorCanBePushed.Add(PushActorID, bCanBePushed);
+}
+
+void APushableActor::LoadData_Implementation(UMySaveGame* GameData)
+{
+	if (FVector* Location = GameData->PushActorPositions.Find(PushActorID)) {
+		SetActorLocation(*Location);
+	}
+
+	if (bool* ActorCanBePushed = GameData->bPushActorCanBePushed.Find(PushActorID)) {
+		bCanBePushed = *ActorCanBePushed;
+	}
+}
+
 
 

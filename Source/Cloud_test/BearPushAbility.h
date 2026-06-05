@@ -21,17 +21,17 @@ public:
 	UBearPushAbility();
 	
 protected:
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere,BlueprintReadWrite)
 	bool bIsCarrying = false;
 
 	UPROPERTY()
 	TObjectPtr<APushableActor> CurrentCarryActor;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere,BlueprintReadWrite)
 	float CheckDistance = 150.f;
 
-	UPROPERTY(EditAnywhere)
-	float CarrySpeed = 100.f;
+	UPROPERTY(EditAnywhere,BlueprintReadWrite)
+	float CarrySpeed = 800.f;
 
 	bool bCachedPhysics = false;
 

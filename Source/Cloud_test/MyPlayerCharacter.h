@@ -86,16 +86,30 @@ public:
     void EndDialogue();
 
 
-
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
     TObjectPtr<USceneComponent> CarryPoint; // USceneComponent是只有Transform的组件
 
+
+
+    // 菜单相关
+    void OpenMenu(const FInputActionValue& Value);
+    UPROPERTY(EditAnywhere, Category = "Menu")
+    TSubclassOf<UUserWidget> MenuClass;
+    UPROPERTY()
+    UUserWidget* MenuWidget;
+    bool bMenuOpen = false;
+
+
+
+    UPROPERTY(EditAnyWhere,BlueprintReadWrite)
+    TArray<UMorphAbilityComponent*> ActiveMorphAbilities; // 当前形态激活的特殊能力组件
 
 private:
     // ===== Enhanced Input callbacks =====
     void Move(const FInputActionValue& Value);
     void JumpStarted(const FInputActionValue& Value);
     void JumpCompleted(const FInputActionValue& Value);
+
 
     void OnPrevMorphPressed();
     void OnNextMorphPressed();
@@ -133,6 +147,9 @@ private:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input", meta = (AllowPrivateAccess = "true"))
     UInputAction* AbilitySlotAction;
 
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input", meta = (AllowPrivateAccess = "true"))
+    UInputAction* MenuAction;
+
     // ===== Camera Rig =====
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "CameraRig", meta = (AllowPrivateAccess = "true"))
     bool bAutoBindCameraRig = true;
@@ -140,8 +157,6 @@ private:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "CameraRig", meta = (AllowPrivateAccess = "true"))
     AMyCameraRigActor* CameraRigRef = nullptr;
 
-    UPROPERTY()
-    TArray<UMorphAbilityComponent*> ActiveMorphAbilities; // 当前形态激活的特殊能力组件
 
     UPROPERTY()
     TObjectPtr<class UInputMappingContext> ActiveMorphMappingContext = nullptr;

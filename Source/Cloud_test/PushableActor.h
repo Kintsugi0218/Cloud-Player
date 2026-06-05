@@ -4,11 +4,13 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Components/BoxComponent.h"
+#include "ISaveManager.h"
 #include "PushableActor.generated.h"
 
+class UMySaveGame;
 
 UCLASS()
-class CLOUD_TEST_API APushableActor : public AActor
+class CLOUD_TEST_API APushableActor : public AActor, public IISaveManager
 {
 	GENERATED_BODY()
 	
@@ -47,8 +49,11 @@ public:
     TObjectPtr<class AMyPlayerCharacter> CurrentCarrier;
 
     // 当前是否可以被推动(推到指定位置之后就不允许挪动，除非需要再次利用）
-    UPROPERTY()
+    UPROPERTY(EditAnywhere,BlueprintReadWrite)
     bool bCanBePushed = true;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    FString PushActorID;
 
 
 public:
@@ -58,4 +63,7 @@ public:
     void BeginCarry(class AMyPlayerCharacter* Player);
 
     void EndCarry();
+
+    virtual void SaveData_Implementation(UMySaveGame* GameData) override;
+    virtual void LoadData_Implementation(UMySaveGame* GameData) override;
 };

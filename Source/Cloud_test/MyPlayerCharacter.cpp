@@ -224,6 +224,40 @@ void AMyPlayerCharacter::JumpCompleted(const FInputActionValue& Value)
     bIsJumping = false;
 }
 
+void AMyPlayerCharacter::OpenMenu(const FInputActionValue& Value)
+{
+    if (!MenuClass) return;
+
+    APlayerController* PlayerController = Cast<APlayerController>(GetController());
+
+    if (!bMenuOpen) {
+        MenuWidget = CreateWidget<UUserWidget>(PlayerController,MenuClass);
+        if (MenuWidget){
+            MenuWidget->AddToViewport();
+            
+            FInputModeUIOnly InputMode;
+
+            InputMode.SetWidgetToFocus(MenuWidget->TakeWidget());
+            
+            PlayerController->SetInputMode(InputMode);
+            PlayerController->bShowMouseCursor = true;
+        }
+        else {
+            if (MenuWidget) {
+                MenuWidget->RemoveFromParent();
+                MenuWidget = nullptr;
+            }
+
+            FInputModeGameOnly InputMode;
+            PlayerController->SetInputMode(InputMode);
+            PlayerController->bShowMouseCursor = false;
+
+            bMenuOpen = false;
+        }
+    }
+   
+}
+
 void AMyPlayerCharacter::OnPrevMorphPressed()
 {
     CycleMorph(-1);
@@ -365,6 +399,10 @@ void AMyPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
         EIC->BindAction(AbilitySlotAction, ETriggerEvent::Started, this, &AMyPlayerCharacter::OnAbilitySlotPressed);
         EIC->BindAction(AbilitySlotAction, ETriggerEvent::Completed, this, &AMyPlayerCharacter::OnAbilitySlotReleased);
         EIC->BindAction(AbilitySlotAction, ETriggerEvent::Canceled, this, &AMyPlayerCharacter::OnAbilitySlotReleased);
+    }
+
+    if (MenuAction) {
+        EIC->BindAction(MenuAction, ETriggerEvent::Started, this, &AMyPlayerCharacter::OpenMenu);
     }
 }
 

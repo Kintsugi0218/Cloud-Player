@@ -230,7 +230,7 @@ void AMyCameraRigActor::UpdateFollow(float DeltaTime)
 
 				if (FMath::IsFinite(DeltaWorld.X) && FMath::IsFinite(DeltaWorld.Y) && FMath::IsFinite(DeltaWorld.Z))
 				{
-					const float MaxPushPerFrame = 80.f;
+					const float MaxPushPerFrame = 400.f;
 					DeltaWorld = DeltaWorld.GetClampedToMaxSize2D(MaxPushPerFrame); //防止跳跃
 
 					DesiredX = CamLoc.X + DeltaWorld.X; // 更新目标位置

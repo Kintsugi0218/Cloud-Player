@@ -13,6 +13,11 @@ void UMyGameInstance::Init()
     SaveManager = NewObject<USaveManager>(this); // 创建归属于GameInstance的SaveManager（生命周期跟随GameInstance）
 
     // LoadGame(); // 在这里会导致LoadGame调用过早，可以放在player的BeginPlay中
+
+    GameData = Cast<UMySaveGame>(UGameplayStatics::CreateSaveGameObject(UMySaveGame::StaticClass()));
+
+   
+
 }
 
 void UMyGameInstance::SaveAndQuit()
@@ -32,16 +37,23 @@ void UMyGameInstance::NewGame()
 {
     if (!SaveManager) return;
 
-    UMySaveGame* GameData = Cast<UMySaveGame>(
-        UGameplayStatics::CreateSaveGameObject(UMySaveGame::StaticClass())
-    );
-
     if (!GameData) return;
+
+    GameData->Currentkey.Add(TEXT("MoveForward"), EKeys::W);
+    GameData->Currentkey.Add(TEXT("MoveBackward"), EKeys::S);
+    GameData->Currentkey.Add(TEXT("MoveLeft"), EKeys::A);
+    GameData->Currentkey.Add(TEXT("MoveRight"), EKeys::D);
+    GameData->Currentkey.Add(TEXT("Jump"), EKeys::SpaceBar);
+    GameData->Currentkey.Add(TEXT("Ability"), EKeys::G);
+    GameData->Currentkey.Add(TEXT("Menu"), EKeys::M);
+    GameData->Currentkey.Add(TEXT("Interact"), EKeys::F);
+    GameData->Currentkey.Add(TEXT("MorphNext"), EKeys::E);
+    GameData->Currentkey.Add(TEXT("MorphPrev"), EKeys::Q);
 
     UWorld* World = GetWorld();
 
     // 初始化必要默认值（只写必要的）
-    GameData->PlayerLocation = FVector(-200, 0, 1142);
+    GameData->PlayerLocation = FVector(0, 600, 300);
 
     // 应用初始数据
     SaveManager->LoadGame(World,GameData);
@@ -55,10 +67,6 @@ void UMyGameInstance::NewGame()
 void UMyGameInstance::SaveGame()
 {
     if (!SaveManager) return;
-
-    UMySaveGame* GameData = Cast<UMySaveGame>(
-        UGameplayStatics::CreateSaveGameObject(UMySaveGame::StaticClass())
-    );
 
     if (!GameData) return;
 
@@ -81,9 +89,7 @@ void UMyGameInstance::LoadGame()
         return;
     }
    
-    UMySaveGame* GameData = Cast<UMySaveGame>(
-        UGameplayStatics::LoadGameFromSlot(TEXT("GameData_Slot1"), 0)
-    );
+    GameData = Cast<UMySaveGame>(UGameplayStatics::LoadGameFromSlot(TEXT("GameData_Slot1"), 0));
 
     UWorld* World = GetWorld();
 
