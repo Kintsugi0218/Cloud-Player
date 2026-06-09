@@ -47,6 +47,9 @@ public:
     UPROPERTY()
     FRotator TargetRotation;
 
+    UPROPERTY()
+    bool bIsInteracting;
+
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interact | Dialogue")
     TArray<FString> DialogueLines;
 

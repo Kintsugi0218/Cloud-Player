@@ -36,14 +36,21 @@ void AMyNPC::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-    FRotator NewRot = FMath::RInterpTo(
-        GetActorRotation(),
-        TargetRotation,
-        DeltaTime,
-        5.f
-    );
+    if (bIsInteracting) {
+        FRotator NewRot = FMath::RInterpTo(
+            GetActorRotation(),
+            TargetRotation,
+            DeltaTime,
+            5.f
+        );
 
-    SetActorRotation(NewRot);
+        SetActorRotation(NewRot);
+
+        if (TargetRotation.Equals(GetActorRotation(), 0.01)) {
+            bIsInteracting = false;
+        }
+    }
+    
 }
 
 void AMyNPC::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -88,13 +95,16 @@ void AMyNPC::Interact_Implementation(AActor* Interactor)
     AMyPlayerCharacter* Player = Cast<AMyPlayerCharacter>(Interactor);
     if (!Player) return;
 
+   
     FVector Direction = Player->GetActorLocation() - GetActorLocation();
     FRotator LookAtRotation = Direction.Rotation();
     LookAtRotation.Pitch = 0.f;
     LookAtRotation.Roll = 0.f;
 
     TargetRotation = LookAtRotation;
-    
+
+    bIsInteracting = true;
+
     if (!bHasLearnedAbility) {
         Player->StartDialogue(DialogueLines);
         bHasLearnedAbility = true;
