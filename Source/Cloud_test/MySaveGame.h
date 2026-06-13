@@ -18,7 +18,7 @@ class CLOUD_TEST_API UMySaveGame : public USaveGame
 public:
 
 	UPROPERTY(SaveGame) // 需要保存的变量都要管理
-		FVector PlayerLocation;
+	FVector PlayerLocation;
 
 	UPROPERTY(SaveGame)
 	TArray<UMyMorphDataAsset*> UnlockedMorphs;
@@ -35,6 +35,9 @@ public:
 
 	UPROPERTY(SaveGame)
 	TMap<FString, FVector> NPCPositions;
+
+	UPROPERTY(SaveGame,EditAnywhere,BlueprintReadWrite)
+	TMap<FString, int> NPCNextPositionIndex;
 
 	UPROPERTY(SaveGame)
 	TMap<FString, bool> NPCAbility;

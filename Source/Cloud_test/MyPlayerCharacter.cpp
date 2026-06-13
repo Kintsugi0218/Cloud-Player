@@ -7,10 +7,12 @@
 #include "Kismet/GameplayStatics.h"
 #include "Engine/StreamableManager.h" // 用于异步加载
 #include "Engine/LocalPlayer.h"
-
+#include "GameFramework/SpringArmComponent.h"
+#include "Camera/CameraComponent.h"
 
 #include "MySaveGame.h"
 #include "MyGameInstance.h"
+#include "Components/TextBlock.h"
 
 #include "InteractInterface.h"
 #include "Blueprint/UserWidget.h"
@@ -46,10 +48,24 @@ AMyPlayerCharacter::AMyPlayerCharacter()
     bUseControllerRotationRoll = false;
 
     GetCharacterMovement()->bOrientRotationToMovement = true;
-    GetCharacterMovement()->RotationRate = FRotator(0.f, 540.f, 0.f);
+    GetCharacterMovement()->RotationRate = FRotator(0.f, 600.f, 0.f);
     GetCharacterMovement()->MaxWalkSpeed = 450.f; // 初始值
     GetCharacterMovement()->AirControl = 0.6f; // 初始值
     GetCharacterMovement()->GravityScale = 0.35f; // 初始值
+
+
+    GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
+    GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
+    GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
+
+    CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
+    CameraBoom->SetupAttachment(RootComponent);
+    CameraBoom->bUsePawnControlRotation = true;
+
+    FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
+    FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
+    FollowCamera->bUsePawnControlRotation = false;
+
 
     UnlockedMorphTags = { FName(TEXT("Morph.Default")) };
 
@@ -172,6 +188,7 @@ void AMyPlayerCharacter::Tick(float DeltaTime)
 
         SetActorRotation(NewRot);
     }
+
 }
 
 void AMyPlayerCharacter::Move(const FInputActionValue& Value)
@@ -190,9 +207,7 @@ void AMyPlayerCharacter::Move(const FInputActionValue& Value)
     const FVector Forward = FRotationMatrix(CamYaw).GetUnitAxis(EAxis::X);
     const FVector Right = FRotationMatrix(CamYaw).GetUnitAxis(EAxis::Y);
 
-    FVector DesiredMove =
-        Forward * MoveValue.Y +
-        Right * MoveValue.X;
+    FVector DesiredMove = Forward * MoveValue.Y + Right * MoveValue.X;
 
     for (UMorphAbilityComponent* Comp : ActiveMorphAbilities)
     {
@@ -202,15 +217,24 @@ void AMyPlayerCharacter::Move(const FInputActionValue& Value)
         {
             continue;
         }
-
-        if (BearAbility->IsCarryBlocked(DesiredMove.GetSafeNormal()))
-        {
-            return;
-        }
     }
 
     AddMovementInput(Forward, MoveValue.Y);
     AddMovementInput(Right, MoveValue.X);
+}
+
+void AMyPlayerCharacter::Look(const FInputActionValue& Value)
+{
+    if (bIsInteracting) return;
+
+    FVector2D LookAxisVector = Value.Get<FVector2D>();
+    float Yaw = LookAxisVector.X;
+    float Pitch = LookAxisVector.Y;
+
+    if (!Controller) return;
+
+    AddControllerYawInput(Yaw);
+    AddControllerPitchInput(Pitch);
 }
 
 void AMyPlayerCharacter::JumpStarted(const FInputActionValue& Value)
@@ -404,6 +428,12 @@ void AMyPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
     if (MenuAction) {
         EIC->BindAction(MenuAction, ETriggerEvent::Started, this, &AMyPlayerCharacter::OpenMenu);
     }
+
+    if (LookAction) {
+        EIC->BindAction(LookAction, ETriggerEvent::Triggered, this, &AMyPlayerCharacter::Look);
+    }
+
+  
 }
 
 
@@ -416,13 +446,17 @@ void AMyPlayerCharacter::Interact()
     }
 }
 
-void AMyPlayerCharacter::ShowInteractPrompt()
+void AMyPlayerCharacter::ShowInteractPrompt(FText InteractPromptText)
 {
     if (!InteractPromptWidget && InteractPromptClass)
     {
         InteractPromptWidget = CreateWidget<UUserWidget>(GetWorld(), InteractPromptClass);
         InteractPromptWidget->AddToViewport();
 
+        UTextBlock* TextBlock = Cast<UTextBlock>(InteractPromptWidget->GetWidgetFromName(TEXT("InteractText")));
+        if (TextBlock) {
+            TextBlock->SetText(InteractPromptText);
+        }
         UE_LOG(LogTemp, Warning, TEXT("Create F"));
     }
 }
@@ -442,7 +476,7 @@ void AMyPlayerCharacter::SetCurrentInteractable(AActor* NewInteractable)
     if (NewInteractable)
     {
         CurrentInteractable = NewInteractable;
-        ShowInteractPrompt();
+        ShowInteractPrompt(IInteractInterface::Execute_GetInteractionText(CurrentInteractable));
     }
     else if (CurrentInteractable)
     {
@@ -498,7 +532,7 @@ void AMyPlayerCharacter::EndDialogue()
     // 恢复提示UI（如果还在范围内）
     if (CurrentInteractable)
     {
-        ShowInteractPrompt();
+        ShowInteractPrompt(IInteractInterface::Execute_GetInteractionText(CurrentInteractable));
     }
 
     if (APlayerController* PC = Cast<APlayerController>(GetController()))
@@ -554,6 +588,25 @@ void AMyPlayerCharacter::UnlockMorphByTag(FName Tag)
     if (!UnlockedMorphTags.Contains(Tag))
     {
         UnlockedMorphTags.Add(Tag);
+
+        if (PopWindowClass && !PopWindowWidget) 
+        {
+            PopWindowWidget = CreateWidget<UUserWidget>(GetWorld(), PopWindowClass);
+            PopWindowWidget->AddToViewport();
+
+            APlayerController* PC = Cast<APlayerController>(GetController());
+
+            if (PC)
+            {
+                FInputModeUIOnly Mode;
+
+                Mode.SetWidgetToFocus(PopWindowWidget->TakeWidget());
+                Mode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+
+                PC->SetInputMode(Mode);
+                PC->bShowMouseCursor = true;
+            }
+        }
         UE_LOG(LogTemp, Warning, TEXT("Player learned %s"), *Tag.ToString());
     }
 }
@@ -590,6 +643,31 @@ void AMyPlayerCharacter::ApplyMorphSettings(UMyMorphDataAsset* Data)
         {
             GetMesh()->SetMaterial(0, LoadedMat);
         }
+    }
+
+    UE_LOG(LogTemp, Error,TEXT("LoadedClass start"));
+    if (Data->AnimBPClass) 
+    {
+        UClass* LoadedClass = Data->AnimBPClass.LoadSynchronous();
+
+        UE_LOG(LogTemp, Warning, TEXT("%s"),*LoadedClass->GetName());
+
+        if (LoadedClass)
+        {
+            GetMesh()->SetAnimInstanceClass(LoadedClass);
+        }
+    }
+    UE_LOG(LogTemp, Error, TEXT("LoadedClass end"));
+
+    GetMesh()->SetRelativeLocation(Data->MeshLocation);
+    GetMesh()->SetRelativeRotation(Data->MeshRotation);
+    GetMesh()->SetRelativeScale3D(Data->MeshScale);
+
+    GetCapsuleComponent()->SetCapsuleSize(Data->CapsuleRadius,Data->CapsuleHalfHeight);
+
+    if (CameraBoom)
+    {
+        CameraBoom->TargetArmLength = Data->TargetArmLength;
     }
 }
 

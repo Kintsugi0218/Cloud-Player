@@ -20,4 +20,8 @@ class CLOUD_TEST_API IInteractInterface
 public:
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	void Interact(AActor* Interactor);
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	FText GetInteractionText();
+
 };

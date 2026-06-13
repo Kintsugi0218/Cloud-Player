@@ -28,9 +28,6 @@ protected:
 	TObjectPtr<APushableActor> CurrentCarryActor;
 
 	UPROPERTY(EditAnywhere,BlueprintReadWrite)
-	float CheckDistance = 150.f;
-
-	UPROPERTY(EditAnywhere,BlueprintReadWrite)
 	float CarrySpeed = 800.f;
 
 	bool bCachedPhysics = false;
@@ -39,23 +36,16 @@ public:
 
 	virtual bool HandleAbilityInputPressed_Implementation(int32 SlotIndex) override;
 
-	virtual void TickComponent(
-		float DeltaTime,
-		ELevelTick TickType,
-		FActorComponentTickFunction* ThisTickFunction
-	) override;
+	virtual void TickComponent(float DeltaTime,ELevelTick TickType,FActorComponentTickFunction* ThisTickFunction) override;
 
 	virtual void OnAbilityAdded_Implementation() override;
 
 	virtual void OnAbilityRemoved_Implementation() override;
 
-	bool IsCarryBlocked(FVector MoveDirection) const;
 private:
 
 	void TryStartCarry();
 
 	void StopCarry();
 
-
-	APushableActor* FindPushableActor();
 };

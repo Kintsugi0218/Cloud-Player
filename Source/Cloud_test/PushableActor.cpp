@@ -3,6 +3,7 @@
 #include "Components/BoxComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "MyPlayerCharacter.h"
+#include "BearPushAbility.h"
 #include "MySaveGame.h"
 
 
@@ -18,18 +19,22 @@ APushableActor::APushableActor()
 	Mesh->SetupAttachment(Root);
 	Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
-	InteractionBox = CreateDefaultSubobject<UBoxComponent>(TEXT("InteractionBox"));
-	InteractionBox->SetupAttachment(Root);
-	InteractionBox->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-	InteractionBox->SetCollisionResponseToAllChannels(ECR_Ignore);
-	InteractionBox->SetCollisionResponseToChannel(ECC_Pawn,ECR_Overlap);
+	InteractionSphere = CreateDefaultSubobject<USphereComponent>(TEXT("InteractionBox"));
+	InteractionSphere->SetupAttachment(Root);
+	InteractionSphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	InteractionSphere->SetCollisionResponseToAllChannels(ECR_Ignore);
+	InteractionSphere->SetCollisionResponseToChannel(ECC_Pawn,ECR_Overlap);
 
-	ActorCollision = CreateDefaultSubobject<UBoxComponent>(TEXT("ActorCollision"));
+	ActorCollision = CreateDefaultSubobject<UCapsuleComponent>(TEXT("ActorCollision"));
 	ActorCollision->SetupAttachment(Root);
 	ActorCollision->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	ActorCollision->SetCollisionResponseToAllChannels(ECR_Block);
 
 	Mesh->SetSimulatePhysics(false);
+
+	InteractionSphere->OnComponentBeginOverlap.AddDynamic(this,&APushableActor::OnSphereBeginOverlap);
+
+	InteractionSphere->OnComponentEndOverlap.AddDynamic(this,&APushableActor::OnSphereEndOverlap);
 }
 
 
@@ -45,22 +50,54 @@ void APushableActor::Tick(float DeltaTime)
 }
 
 
+
 bool APushableActor::CanBePushed() const
 {
 	return !bBeingCarried && bCanBePushed;
 }
-
 void APushableActor::BeginCarry(AMyPlayerCharacter* Player)
 {
 	bBeingCarried = true;
 	CurrentCarrier = Player;
 }
-
-
 void APushableActor::EndCarry()
 {
 	bBeingCarried = false;
 	CurrentCarrier = nullptr;
+}
+
+void APushableActor::OnSphereBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	if (AMyPlayerCharacter* Player = Cast<AMyPlayerCharacter>(OtherActor)) 
+	{
+		if (Player->FindComponentByClass<UBearPushAbility>()) 
+		{
+			Player->SetCurrentInteractable(this);
+			Player->ShowInteractPrompt(GetInteractionText_Implementation());
+		}
+	}
+}
+
+void APushableActor::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	if (AMyPlayerCharacter* Player = Cast<AMyPlayerCharacter>(OtherActor))
+	{
+		if (Player->FindComponentByClass<UBearPushAbility>() && Player->CurrentInteractable == this)
+		{
+			Player->SetCurrentInteractable(nullptr);
+			Player->HideInteractPrompt();
+		}
+	}
+}
+
+
+void APushableActor::Interact_Implementation(AActor* Interactor)
+{
+}
+
+FText APushableActor::GetInteractionText_Implementation()
+{
+	return FText::FromString(TEXT("∞·‘À"));
 }
 
 void APushableActor::SaveData_Implementation(UMySaveGame* GameData)

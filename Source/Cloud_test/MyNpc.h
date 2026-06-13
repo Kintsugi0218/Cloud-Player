@@ -31,11 +31,17 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
     virtual void Interact_Implementation(AActor* Interactor) override;
+    virtual FText GetInteractionText_Implementation() override;
 
     virtual void SaveData_Implementation(UMySaveGame* GameData) override;
     virtual void LoadData_Implementation(UMySaveGame* GameData) override;
 
 
+    UFUNCTION(BlueprintImplementableEvent)
+    void BP_SaveData(UMySaveGame* GameData);
+
+    UFUNCTION(BlueprintImplementableEvent)
+    void BP_LoadData(UMySaveGame* GameData);
 
     // 交互触发范围
     UPROPERTY(VisibleAnywhere)
@@ -64,6 +70,7 @@ public:
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     FString NPCID;
+
 
     // 玩家进入
     UFUNCTION()

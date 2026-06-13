@@ -36,13 +36,7 @@ void AMyNPC::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-    if (bIsInteracting) {
-        FRotator NewRot = FMath::RInterpTo(
-            GetActorRotation(),
-            TargetRotation,
-            DeltaTime,
-            5.f
-        );
+    if (bIsInteracting) {FRotator NewRot = FMath::RInterpTo(GetActorRotation(),TargetRotation,DeltaTime,5.f);
 
         SetActorRotation(NewRot);
 
@@ -59,12 +53,8 @@ void AMyNPC::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 }
 
-void AMyNPC::OnOverlapBegin(UPrimitiveComponent* OverlappedComponent,
-    AActor* OtherActor,
-    UPrimitiveComponent* OtherComp,
-    int32 OtherBodyIndex,
-    bool bFromSweep,
-    const FHitResult& SweepResult)
+void AMyNPC::OnOverlapBegin(UPrimitiveComponent* OverlappedComponent,AActor* OtherActor,UPrimitiveComponent* OtherComp,
+    int32 OtherBodyIndex,bool bFromSweep,const FHitResult& SweepResult)
 {
     if (AMyPlayerCharacter* Player = Cast<AMyPlayerCharacter>(OtherActor))
     {
@@ -75,10 +65,8 @@ void AMyNPC::OnOverlapBegin(UPrimitiveComponent* OverlappedComponent,
     }
 }
 
-void AMyNPC::OnOverlapEnd(UPrimitiveComponent* OverlappedComponent,
-    AActor* OtherActor,
-    UPrimitiveComponent* OtherComp,
-    int32 OtherBodyIndex)
+void AMyNPC::OnOverlapEnd(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+    UPrimitiveComponent* OtherComp,int32 OtherBodyIndex)
 {
     if (OtherActor == CurrentOverlappingPlayer)
     {
@@ -114,15 +102,18 @@ void AMyNPC::Interact_Implementation(AActor* Interactor)
     {
         Player->StartDialogue(LearnedDialogueLines);
     }
-   
+}
 
-   
+FText AMyNPC::GetInteractionText_Implementation() {
+    return FText::FromString(TEXT("½»Á÷"));
 }
 
 void AMyNPC::SaveData_Implementation(UMySaveGame* GameData)
 {
     GameData->NPCPositions.Add(NPCID, GetActorLocation());
     GameData->NPCAbility.Add(NPCID, bHasLearnedAbility);
+
+    BP_SaveData(GameData);
 } 
 
 void AMyNPC::LoadData_Implementation(UMySaveGame* GameData)
@@ -136,5 +127,7 @@ void AMyNPC::LoadData_Implementation(UMySaveGame* GameData)
     {
         bHasLearnedAbility = *learnedAbility;
     }
+
+    BP_LoadData(GameData);
 }
 

@@ -7,6 +7,10 @@
 #include "ISaveManager.h"
 #include "MyPlayerCharacter.generated.h"
 
+class UCameraComponent;
+class USpringArmComponent;
+struct FInputActionValue;
+
 class USkeletalMeshComponent; // 新增，用于动态形态
 class UMorphAbilityComponent;
 
@@ -30,6 +34,17 @@ public:
 
 protected:
     virtual void BeginPlay() override;
+
+private:
+    /** 相机组件 */
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+    USpringArmComponent* CameraBoom;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+    UCameraComponent* FollowCamera;
+
+    /** 角色运动组件 */
+    UCharacterMovementComponent* CharacterMovement;
 
 public:
     virtual void Tick(float DeltaTime) override;
@@ -67,13 +82,19 @@ public:
     UPROPERTY()
     UUserWidget* InteractPromptWidget;
 
+
+    UPROPERTY(EditAnywhere, Category = "PopWindow")
+    TSubclassOf<UUserWidget> PopWindowClass;
+    UPROPERTY()
+    UUserWidget* PopWindowWidget;
+
     UPROPERTY()
     AActor* CurrentInteractable = nullptr;
 
     FRotator CurrentInteractableRotation;
 
     void SetCurrentInteractable(AActor* NewInteractable);
-    void ShowInteractPrompt();
+    void ShowInteractPrompt(FText InteractPromptText);
     void HideInteractPrompt();
 
     UPROPERTY(EditAnywhere, Category = "UI")
@@ -90,7 +111,6 @@ public:
     TObjectPtr<USceneComponent> CarryPoint; // USceneComponent是只有Transform的组件
 
 
-
     // 菜单相关
     void OpenMenu(const FInputActionValue& Value);
     UPROPERTY(EditAnywhere, Category = "Menu")
@@ -104,9 +124,12 @@ public:
     UPROPERTY(EditAnyWhere,BlueprintReadWrite)
     TArray<UMorphAbilityComponent*> ActiveMorphAbilities; // 当前形态激活的特殊能力组件
 
+    UPROPERTY(VisibleAnywhere,BlueprintReadOnly)
+    bool bIsJumping = false;
 private:
     // ===== Enhanced Input callbacks =====
     void Move(const FInputActionValue& Value);
+    void Look(const FInputActionValue& Value);
     void JumpStarted(const FInputActionValue& Value);
     void JumpCompleted(const FInputActionValue& Value);
 
@@ -150,6 +173,9 @@ private:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input", meta = (AllowPrivateAccess = "true"))
     UInputAction* MenuAction;
 
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input", meta = (AllowPrivateAccess = "true"))
+    UInputAction* LookAction;
+
     // ===== Camera Rig =====
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "CameraRig", meta = (AllowPrivateAccess = "true"))
     bool bAutoBindCameraRig = true;
@@ -167,7 +193,6 @@ private:
 
     // ===== Jump Logic (从头文件移至此处) =====
     bool bJumpHeld = false;
-    bool bIsJumping = false;
     float JumpStartZ = 0.f;
 
     // ===== 升空体积缩小相关 =====

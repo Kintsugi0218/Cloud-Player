@@ -43,6 +43,28 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Visual")
     TSoftObjectPtr<UMaterialInterface> Material;
 
+    // --- ABP ---
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
+    TSoftClassPtr<UAnimInstance> AnimBPClass;
+
+    UPROPERTY(EditAnywhere)
+    FVector MeshLocation;
+
+    UPROPERTY(EditAnywhere)
+    FRotator MeshRotation;
+
+    UPROPERTY(EditAnywhere)
+    FVector MeshScale;
+
+    UPROPERTY(EditAnywhere)
+    float CapsuleHalfHeight;
+
+    UPROPERTY(EditAnywhere)
+    float CapsuleRadius;
+
+    UPROPERTY(EditAnywhere)
+    float TargetArmLength;
+
     // --- 特殊能力组件 ---
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Abilities")
     TArray<TSubclassOf<UMorphAbilityComponent>> AbilityComponents;
@@ -57,6 +79,10 @@ public:
     // --- 解锁标签 ---
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Unlock")
     FName UnlockTag = NAME_None;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Description")
+    FText Description;
+
 
     virtual FPrimaryAssetId GetPrimaryAssetId() const override;
 };

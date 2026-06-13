@@ -3,14 +3,16 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "Components/BoxComponent.h"
+#include "Components/SphereComponent.h"
+#include "Components/CapsuleComponent.h"
 #include "ISaveManager.h"
+#include "InteractInterface.h"
 #include "PushableActor.generated.h"
 
 class UMySaveGame;
 
 UCLASS()
-class CLOUD_TEST_API APushableActor : public AActor, public IISaveManager
+class CLOUD_TEST_API APushableActor : public AActor, public IISaveManager,public IInteractInterface
 {
 	GENERATED_BODY()
 	
@@ -35,10 +37,16 @@ public:
 
     // 检测区域
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-    TObjectPtr<UBoxComponent> InteractionBox;
+    TObjectPtr<USphereComponent> InteractionSphere;
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-    UBoxComponent* ActorCollision;
+    UCapsuleComponent* ActorCollision;
+
+    UPROPERTY(EditAnywhere,BlueprintReadOnly)
+    FVector CarryOffset = FVector::ZeroVector;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    float OffsetDistance;
 
     // 是否正在被推动
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
@@ -56,6 +64,22 @@ public:
     FString PushActorID;
 
 
+    UFUNCTION()
+    void OnSphereBeginOverlap(
+        UPrimitiveComponent* OverlappedComp,
+        AActor* OtherActor,
+        UPrimitiveComponent* OtherComp,
+        int32 OtherBodyIndex,
+        bool bFromSweep,
+        const FHitResult& SweepResult);
+
+    UFUNCTION()
+    void OnSphereEndOverlap(
+        UPrimitiveComponent* OverlappedComp,
+        AActor* OtherActor,
+        UPrimitiveComponent* OtherComp,
+        int32 OtherBodyIndex);
+
 public:
 
     bool CanBePushed() const;
@@ -63,6 +87,9 @@ public:
     void BeginCarry(class AMyPlayerCharacter* Player);
 
     void EndCarry();
+
+    virtual void Interact_Implementation(AActor* Interactor) override;
+    virtual FText GetInteractionText_Implementation() override;
 
     virtual void SaveData_Implementation(UMySaveGame* GameData) override;
     virtual void LoadData_Implementation(UMySaveGame* GameData) override;
