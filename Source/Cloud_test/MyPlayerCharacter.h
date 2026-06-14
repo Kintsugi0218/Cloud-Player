@@ -5,6 +5,7 @@
 #include "InputActionValue.h"
 #include "MyMorphDataAsset.h" // 引入新类
 #include "ISaveManager.h"
+#include "NiagaraComponent.h"
 #include "MyPlayerCharacter.generated.h"
 
 class UCameraComponent;
@@ -126,6 +127,12 @@ public:
 
     UPROPERTY(VisibleAnywhere,BlueprintReadOnly)
     bool bIsJumping = false;
+
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Niagara")
+    TObjectPtr<UNiagaraComponent> MorphEffect;
+
+
 private:
     // ===== Enhanced Input callbacks =====
     void Move(const FInputActionValue& Value);

@@ -36,6 +36,9 @@ public:
 	UPROPERTY(BlueprintReadWrite,EditAnywhere)
 	UMySaveGame* GameData;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Game")
+	FTransform DefaultSpawnTransform;
+
 private:
 
 	UPROPERTY()

@@ -53,7 +53,7 @@ void UMyGameInstance::NewGame()
     UWorld* World = GetWorld();
 
     // 初始化必要默认值（只写必要的）
-    GameData->PlayerLocation = FVector(0, 600, 300);
+    GameData->PlayerLocation = DefaultSpawnTransform.GetLocation();
 
     // 应用初始数据
     SaveManager->LoadGame(World,GameData);

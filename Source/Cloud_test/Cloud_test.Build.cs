@@ -18,7 +18,8 @@ public class Cloud_test : ModuleRules
 				"EnhancedInput",
 				"UMG",
 				"Slate",
-				"SlateCore"
+				"SlateCore",
+                "Niagara"
             });
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });

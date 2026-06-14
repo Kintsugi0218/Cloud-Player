@@ -105,7 +105,7 @@ void AMyNPC::Interact_Implementation(AActor* Interactor)
 }
 
 FText AMyNPC::GetInteractionText_Implementation() {
-    return FText::FromString(TEXT("½»Á÷"));
+    return FText::FromString(TEXT("\u4EA4\u6D41"));
 }
 
 void AMyNPC::SaveData_Implementation(UMySaveGame* GameData)

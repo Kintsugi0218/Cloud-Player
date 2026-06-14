@@ -14,6 +14,8 @@
 #include "MyGameInstance.h"
 #include "Components/TextBlock.h"
 
+#include "NiagaraComponent.h"
+
 #include "InteractInterface.h"
 #include "Blueprint/UserWidget.h"
 #include "DialogueWidget.h"
@@ -71,6 +73,9 @@ AMyPlayerCharacter::AMyPlayerCharacter()
 
     CarryPoint = CreateDefaultSubobject<USceneComponent>(TEXT("PushPoint"));
     CarryPoint->SetupAttachment(GetMesh());
+
+    MorphEffect = CreateDefaultSubobject<UNiagaraComponent>(TEXT("MorphEffect"));
+    MorphEffect->SetupAttachment(GetMesh());
 }
 
 void AMyPlayerCharacter::BeginPlay()
@@ -669,6 +674,19 @@ void AMyPlayerCharacter::ApplyMorphSettings(UMyMorphDataAsset* Data)
     {
         CameraBoom->TargetArmLength = Data->TargetArmLength;
     }
+
+    const FMorphCloudSettings& Cloud = Data->CloudSettings;
+
+    MorphEffect->SetVariableVec3(TEXT("VolumeSize"),Cloud.VolumeSize);
+    MorphEffect->SetVariableVec3(TEXT("LocalPivot"),Cloud.LocalPivot);
+    MorphEffect->SetVariableInt(TEXT("ResolutionMaxAxis"),Cloud.ResolutionMaxAxis);
+    MorphEffect->SetVariableFloat(TEXT("CloudsSpawnRate"),Cloud.SpawnRate);
+    MorphEffect->SetVariableFloat(TEXT("CloudsLifetimeMin"),Cloud.LifetimeMin);
+    MorphEffect->SetVariableFloat(TEXT("CloudsLifetimeMax"),Cloud.LifetimeMax);
+    MorphEffect->SetVariableFloat(TEXT("CloudsRadiusMin"),Cloud.RadiusMin);
+    MorphEffect->SetVariableFloat(TEXT("CloudsRadiusMax"),Cloud.RadiusMax);
+    MorphEffect->SetVariableFloat(TEXT("CloudsDensityMin"),Cloud.DensityMin);
+    MorphEffect->SetVariableFloat(TEXT("CloudsDensityMax"),Cloud.DensityMax);
 }
 
 void AMyPlayerCharacter::RefreshMorphInputContext(UMyMorphDataAsset* Data) // À¢–¬–ŒÃ¨ ‰»Î

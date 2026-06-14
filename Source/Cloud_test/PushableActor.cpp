@@ -97,7 +97,7 @@ void APushableActor::Interact_Implementation(AActor* Interactor)
 
 FText APushableActor::GetInteractionText_Implementation()
 {
-	return FText::FromString(TEXT("∞·‘À"));
+	return FText::FromString(TEXT("\u642C\u8FD0"));
 }
 
 void APushableActor::SaveData_Implementation(UMySaveGame* GameData)
